@@ -1,169 +1,16 @@
-{% extends "./base.html" %} {% block title %}Lecturer Dashboard{% endblock %}
-{%block content %}
+{% extends "../base.html" %} {% block title %}Lecturer Dashboard{% endblock %} 
+{% block content %}
 <div class="flex min-h-screen bg-gray-50">
-  <!-- Sidebar -->
-  <div
-    class="w-64 bg-gradient-to-b from-teal-400 to-teal-600 text-white flex flex-col"
-  >
-    <!-- Logo -->
-    <div class="p-6">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center"
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
-        </div>
-        <div>
-          <div class="font-bold">Lecturer Portal</div>
-          <div class="text-xs text-teal-100">Workload Tracker</div>
-        </div>
-      </div>
-    </div>
+  <!-- Include Sidebar -->
+  {% include "./sidebar.html" %}
 
-    <!-- User Info -->
-    <div class="px-6 py-4 bg-white/10 mx-4 rounded-lg mb-6">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-teal-300 rounded-full flex items-center justify-center text-teal-800 font-bold"
-        >
-          C
-        </div>
-        <div>
-          <div class="font-semibold">{{ request.user.username }}</div>
-          <div class="text-xs text-teal-100">Computer Science</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="flex-1 px-4">
-      <a
-        href="{% url 'home' %}"
-        class="flex items-center gap-3 px-4 py-3 bg-white text-teal-600 rounded-lg mb-2 font-medium"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-        My Dashboard
-      </a>
-      <a
-        href="#"
-        class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        My Teaching Records
-      </a>
-      <a
-        href="#"
-        class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-          />
-        </svg>
-        My Workload
-      </a>
-    </nav>
-
-    <!-- Bottom Navigation -->
-    <div class="px-4 pb-6">
-      <a
-        href="#"
-        class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-        Settings
-      </a>
-      <a
-        href="{% url 'logout' %}"
-        class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-          />
-        </svg>
-        Sign Out
-      </a>
-    </div>
-  </div>
-
-  <!-- Main Content -->
-  <div class="flex-1 p-8">
+  <!-- Main Content with left margin to account for fixed sidebar -->
+  <div class="flex-1 ml-64 py-8 px-20">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">
-          Welcome, {{ request.user.username }}
+          Welcome, {{ request.user.first_name|default:request.user.username }}
         </h1>
         <p class="text-gray-500 mt-1">Here's your teaching workload overview</p>
       </div>
@@ -214,7 +61,6 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-4 gap-6 mb-8">
-      <!-- Total Hours -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
           <div>
@@ -242,7 +88,6 @@
         </div>
       </div>
 
-      <!-- Sessions -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
           <div>
@@ -270,7 +115,6 @@
         </div>
       </div>
 
-      <!-- Predicted Total -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
           <div>
@@ -298,7 +142,6 @@
         </div>
       </div>
 
-      <!-- Avg Weekly -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
           <div>
@@ -352,7 +195,6 @@
 
     <!-- Charts Row -->
     <div class="grid grid-cols-3 gap-6 mb-8">
-      <!-- Weekly Hours Chart -->
       <div
         class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
       >
@@ -417,7 +259,6 @@
         </div>
       </div>
 
-      <!-- My Subjects -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-xl font-bold text-gray-900 mb-6">My Subjects</h2>
         <div class="space-y-6">
@@ -459,7 +300,6 @@
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <h2 class="text-xl font-bold text-gray-900 mb-6">Upcoming Sessions</h2>
       <div class="space-y-4">
-        <!-- Session 1 -->
         <div
           class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
         >
@@ -497,7 +337,6 @@
           </div>
         </div>
 
-        <!-- Session 2 -->
         <div
           class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
         >
@@ -535,7 +374,6 @@
           </div>
         </div>
 
-        <!-- Session 3 -->
         <div
           class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
         >
