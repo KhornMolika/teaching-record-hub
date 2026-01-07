@@ -30,11 +30,18 @@ def register_view(request):
                 is_active=False  # User needs to be activated by admin
             )
             login(request, user)
-            return redirect('analytics/dashboard.html')
+            return redirect('analytics/admin/dashboard.html')
 
-    return render(request, 'analytics/register.html')
+    return render(request, 'analytics/auth/register.html')
 
 def login_view(request):
+    # Redirect if already logged in
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect('dashboard')
+        else:
+            return redirect('home')
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -45,22 +52,24 @@ def login_view(request):
         if user:
             if not user.is_active:
                 messages.error(request, "Your account is pending admin approval.")
-                return render(request, 'analytics/login.html')
+                return render(request, 'analytics/auth/login.html')
             
             # Role-based validation
             if role == 'administrator':
                 # Admin must be staff and active
                 if user.is_staff and user.is_active:
                     login(request, user)
-                    return redirect('dashboard')  # Use URL name, not file path
+                    messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
+                    return redirect('dashboard')
                 else:
                     messages.error(request, "You don't have administrator privileges.")
             
             elif role == 'lecturer':
-                # Lecturer must be active
+                # Lecturer must be active but not staff
                 if user.is_active:
                     login(request, user)
-                    return redirect('home')  # Use URL name, not file path
+                    messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
+                    return redirect('home')
                 else:
                     messages.error(request, "You don't have lecturer privileges.")
             
@@ -69,13 +78,15 @@ def login_view(request):
         else:
             messages.error(request, "Invalid username or password")
     
-    return render(request, 'analytics/login.html')
+    return render(request, 'analytics/auth/login.html')
 
 
 # Logout view
+@login_required(login_url='login')
 def logout_view(request):
+    user_name = request.user.get_full_name() or request.user.username
     logout(request)
-    messages.success(request, "You have been logged out successfully.")
+    messages.success(request, f"Goodbye {user_name}! You have been logged out successfully.")
     return redirect('login')
 
 
@@ -87,11 +98,29 @@ def dashboard(request):
         messages.error(request, "Access denied. Admins only.")
         return redirect('home')
     
-    return render(request, 'analytics/dashboard.html')  # Use render, not redirect
+    # You can add admin-specific data here
+    context = {
+        'total_lecturers': User.objects.filter(is_staff=False, is_active=True).count(),
+        'pending_approvals': User.objects.filter(is_active=False).count(),
+    }
+    
+    return render(request, 'analytics/admin/dashboard.html', context)
 
 
 # Home page for lecturers
 @login_required(login_url='login')
 def home(request):
     # Any active user can access home
-    return render(request, 'analytics/home.html')  # Use render, not redirect
+    return render(request, 'analytics/lecturer/home.html')
+
+@login_required(login_url='login')
+def teaching_records(request):
+    return render(request, 'analytics/lecturer/teaching_records.html')
+
+@login_required(login_url='login')
+def workload(request):
+    return render(request, 'analytics/lecturer/workload.html')
+
+
+
+
