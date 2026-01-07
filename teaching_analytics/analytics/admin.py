@@ -7,6 +7,8 @@ from .models import (
     TeachingSummary,
     WorkloadPrediction,
 )
+from .services.parser import parse_xlsb_and_create_sessions
+from .services.summary_service import generate_summary
 
 # ----------------------------
 # Lecturer Admin
@@ -44,6 +46,18 @@ class SubjectAdmin(admin.ModelAdmin):
 # ----------------------------
 # Teaching File Admin
 # ----------------------------
+@admin.action(description="Parse XLSB → Create Teaching Sessions")
+def parse_xlsb_files(modeladmin, request, queryset):
+    total = 0
+    for teaching_file in queryset:
+        created = parse_xlsb_and_create_sessions(teaching_file)
+        total += created
+
+    modeladmin.message_user(
+        request, f"Successfully created {total} teaching sessions."
+    )
+
+
 @admin.register(TeachingFile)
 class TeachingFileAdmin(admin.ModelAdmin):
     list_display = (
@@ -55,11 +69,40 @@ class TeachingFileAdmin(admin.ModelAdmin):
     search_fields = ("file_name", "lecturer__lecturer_id")
     list_filter = ("semester", "upload_date")
     ordering = ("-upload_date",)
+    actions = [parse_xlsb_files]
 
 
 # ----------------------------
 # Teaching Session Admin (CORE)
 # ----------------------------
+@admin.action(description="Generate Teaching Summary")
+def generate_summary_action(modeladmin, request, queryset):
+    if not queryset.exists():
+        return
+
+    lecturers = queryset.values_list("lecturer", flat=True).distinct()
+    subjects = queryset.values_list("subject", flat=True).distinct()
+
+    if lecturers.count() > 1 or subjects.count() > 1:
+        modeladmin.message_user(
+            request,
+            "Please select sessions for ONE lecturer and ONE subject only.",
+            level="error"
+        )
+        return
+
+    first = queryset.first()
+
+    generate_summary(
+        lecturer=first.lecturer,
+        subject=first.subject,
+        start_date=queryset.earliest("date").date,
+        end_date=queryset.latest("date").date,
+    )
+
+    modeladmin.message_user(request, "Teaching summary generated.")
+
+
 @admin.register(TeachingSession)
 class TeachingSessionAdmin(admin.ModelAdmin):
     list_display = (
@@ -82,6 +125,8 @@ class TeachingSessionAdmin(admin.ModelAdmin):
     )
     ordering = ("-date",)
     date_hierarchy = "date"
+    actions = [generate_summary_action]
+
 
 
 # ----------------------------
