@@ -4,6 +4,28 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
+
+# Custom decorators for role-based access control
+def admin_required(view_func):
+    @login_required(login_url='login')
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_active or not request.user.is_staff:
+            messages.error(request, "Access denied. Admins only.")
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def lecturer_required(view_func):
+    @login_required(login_url='login')
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_active or request.user.is_staff:
+            messages.error(request, "Access denied. Lecturers only.")
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 # Register view
 def register_view(request):
     if request.method == 'POST':
@@ -27,19 +49,20 @@ def register_view(request):
                 first_name=first_name,
                 last_name=last_name,
                 password=password1,
-                is_active=False  # User needs to be activated by admin
+                is_active=False  # Set to False so users need admin approval
             )
-            login(request, user)
-            return redirect('analytics/admin/dashboard.html')
+            messages.success(request, "Account created successfully! Please login.")
+            return redirect('login')
 
     return render(request, 'analytics/auth/register.html')
+
 
 def login_view(request):
     # Redirect if already logged in
     if request.user.is_authenticated:
-        if request.user.is_staff:
+        if request.user.is_staff and request.user.is_active:
             return redirect('dashboard')
-        else:
+        elif request.user.is_active:
             return redirect('home')
     
     if request.method == 'POST':
@@ -56,19 +79,17 @@ def login_view(request):
             
             # Role-based validation
             if role == 'administrator':
-                # Admin must be staff and active
+                # Admin must be staff AND active
                 if user.is_staff and user.is_active:
                     login(request, user)
-                    messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
                     return redirect('dashboard')
                 else:
                     messages.error(request, "You don't have administrator privileges.")
             
             elif role == 'lecturer':
-                # Lecturer must be active but not staff
-                if user.is_active:
+                # Lecturer must be active AND NOT staff
+                if user.is_active and not user.is_staff:
                     login(request, user)
-                    messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
                     return redirect('home')
                 else:
                     messages.error(request, "You don't have lecturer privileges.")
@@ -91,13 +112,8 @@ def logout_view(request):
 
 
 # Protected dashboard for administrators
-@login_required(login_url='login')
+@admin_required
 def dashboard(request):
-    # Only staff members (admins) can access dashboard
-    if not request.user.is_staff:
-        messages.error(request, "Access denied. Admins only.")
-        return redirect('home')
-    
     # You can add admin-specific data here
     context = {
         'total_lecturers': User.objects.filter(is_staff=False, is_active=True).count(),
@@ -107,20 +123,23 @@ def dashboard(request):
     return render(request, 'analytics/admin/dashboard.html', context)
 
 
+# Admin - Lecturers page
+@admin_required
+def lecturers(request):
+    return render(request, 'analytics/admin/lecturers.html')
+
+
 # Home page for lecturers
-@login_required(login_url='login')
+@lecturer_required
 def home(request):
-    # Any active user can access home
     return render(request, 'analytics/lecturer/home.html')
 
-@login_required(login_url='login')
+
+@lecturer_required
 def teaching_records(request):
     return render(request, 'analytics/lecturer/teaching_records.html')
 
-@login_required(login_url='login')
+
+@lecturer_required
 def workload(request):
     return render(request, 'analytics/lecturer/workload.html')
-
-
-
-

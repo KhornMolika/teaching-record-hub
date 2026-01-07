@@ -8,7 +8,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     
     # Admin URLs
-    path('admin/dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     
     # Lecturer URLs
     path('', views.home, name='home'),

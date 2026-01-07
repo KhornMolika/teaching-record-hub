@@ -1,0 +1,536 @@
+{% extends "../base.html" %} {% block title %}Lecturers{% endblock %} {% block
+content %}
+<div class="flex min-h-screen bg-gray-50">
+  <!-- Include Admin Sidebar -->
+  {% include "./sidebarAdmin.html" %}
+
+  <!-- Main Content -->
+  <div class="flex-1 ml-64 py-8 px-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Lecturers</h1>
+        <p class="text-gray-500 mt-1">Manage lecturer profiles and workload</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <input
+            type="text"
+            placeholder="Search..."
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-64"
+          />
+          <svg
+            class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span
+            class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+          ></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <input
+            type="text"
+            placeholder="Search lecturers..."
+            class="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-80"
+          />
+          <svg
+            class="w-5 h-5 text-gray-400 absolute left-3 top-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <div class="relative">
+          <button
+            class="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          >
+            <svg
+              class="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span class="text-sm font-medium text-gray-700">All Status</span>
+            <svg
+              class="w-4 h-4 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+        >
+          <svg
+            class="w-5 h-5 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            />
+          </svg>
+        </button>
+        <button
+          class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition bg-gray-50"
+        >
+          <svg
+            class="w-5 h-5 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Lecturer
+        </button>
+      </div>
+    </div>
+
+    <!-- Lecturer Cards Grid -->
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Lecturer Card 1 - Dr. Sarah Johnson -->
+      <div
+        class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition"
+      >
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold text-xl"
+            >
+              DSJ
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Dr. Sarah Johnson</h3>
+              <p class="text-sm text-gray-500">L001</p>
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full"
+            >active</span
+          >
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>Computer Science</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>sarah.johnson@university.edu</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">113</div>
+            <div class="text-xs text-gray-500">Hours</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">50</div>
+            <div class="text-xs text-gray-500">Sessions</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">2</div>
+            <div class="text-xs text-gray-500">Subjects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer Card 2 - Prof. Michael Chen -->
+      <div
+        class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition"
+      >
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center text-teal-700 font-bold text-xl"
+            >
+              PMC
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">
+                Prof. Michael Chen
+              </h3>
+              <p class="text-sm text-gray-500">L002</p>
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full"
+            >active</span
+          >
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>Computer Science</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>michael.chen@university.edu</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">119</div>
+            <div class="text-xs text-gray-500">Hours</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">51</div>
+            <div class="text-xs text-gray-500">Sessions</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">2</div>
+            <div class="text-xs text-gray-500">Subjects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer Card 3 - Dr. Emily Watson -->
+      <div
+        class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition"
+      >
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-16 h-16 bg-cyan-100 rounded-xl flex items-center justify-center text-cyan-700 font-bold text-xl"
+            >
+              DEW
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Dr. Emily Watson</h3>
+              <p class="text-sm text-gray-500">L003</p>
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full"
+            >active</span
+          >
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>Information Systems</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>emily.watson@university.edu</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">105</div>
+            <div class="text-xs text-gray-500">Hours</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">49</div>
+            <div class="text-xs text-gray-500">Sessions</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">2</div>
+            <div class="text-xs text-gray-500">Subjects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer Card 4 - Dr. James Miller -->
+      <div
+        class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition"
+      >
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold text-xl"
+            >
+              DJM
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Dr. James Miller</h3>
+              <p class="text-sm text-gray-500">L004</p>
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full"
+            >active</span
+          >
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>Software Engineering</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>james.miller@university.edu</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">120</div>
+            <div class="text-xs text-gray-500">Hours</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">52</div>
+            <div class="text-xs text-gray-500">Sessions</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">2</div>
+            <div class="text-xs text-gray-500">Subjects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer Card 5 - Prof. Lisa Park -->
+      <div
+        class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition"
+      >
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center text-purple-700 font-bold text-xl"
+            >
+              PLP
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Prof. Lisa Park</h3>
+              <p class="text-sm text-gray-500">L005</p>
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full"
+            >inactive</span
+          >
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>Data Science</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span>lisa.park@university.edu</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">0</div>
+            <div class="text-xs text-gray-500">Hours</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">0</div>
+            <div class="text-xs text-gray-500">Sessions</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">0</div>
+            <div class="text-xs text-gray-500">Subjects</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
