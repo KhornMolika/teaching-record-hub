@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
-from datetime import time
+from datetime import time, datetime, timedelta
 import csv
 
 
@@ -204,25 +204,65 @@ def teaching_records(request):
         except ValueError:
             pass
     
-    # Calculate statistics
-    stats = sessions_query.aggregate(
-        total_sessions=Count('id'),
-        total_minutes=Sum('minutes')
-    )
+    # Calculate statistics - recalculate from actual times
+    total_sessions = sessions_query.count()
+    total_minutes = 0
     
-    total_sessions = stats['total_sessions'] or 0
-    total_minutes = stats['total_minutes'] or 0
+    # Recalculate total minutes from time_in/time_out for accurate stats
+    for session in sessions_query:
+        if session.time_in and session.time_out:
+            time_in_dt = datetime.combine(session.date, session.time_in)
+            time_out_dt = datetime.combine(session.date, session.time_out)
+            
+            if time_out_dt < time_in_dt:
+                time_out_dt += timedelta(days=1)
+            
+            duration = time_out_dt - time_in_dt
+            total_minutes += duration.total_seconds() / 60
+        elif session.minutes:
+            total_minutes += session.minutes
+    
     total_hours = round(total_minutes / 60, 2) if total_minutes else 0
     avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
     
     # Add hours field to each session with accurate calculation
     sessions_list = []
     for session in sessions_query:
-        # Calculate hours from minutes, ensuring accurate conversion
-        if session.minutes:
-            session.hours = round(session.minutes / 60, 2)
+        # Calculate hours from time_in and time_out if available
+        if session.time_in and session.time_out:
+            # Convert times to datetime for calculation
+            time_in_dt = datetime.combine(session.date, session.time_in)
+            time_out_dt = datetime.combine(session.date, session.time_out)
+            
+            # Handle cases where time_out is before time_in (crosses midnight)
+            if time_out_dt < time_in_dt:
+                time_out_dt += timedelta(days=1)
+            
+            duration = time_out_dt - time_in_dt
+            actual_minutes = int(duration.total_seconds() / 60)
+            
+            # Calculate hours and remaining minutes
+            hours_part = actual_minutes // 60
+            minutes_part = actual_minutes % 60
+            
+            session.hours = hours_part
+            session.minutes_part = minutes_part
+            session.hours_decimal = round(actual_minutes / 60, 2)  # Keep decimal for sorting/stats
+            session.actual_minutes = actual_minutes
+        elif session.minutes:
+            # Fallback to stored minutes if time_in/time_out not available
+            hours_part = session.minutes // 60
+            minutes_part = session.minutes % 60
+            
+            session.hours = hours_part
+            session.minutes_part = minutes_part
+            session.hours_decimal = round(session.minutes / 60, 2)
+            session.actual_minutes = session.minutes
         else:
             session.hours = 0
+            session.minutes_part = 0
+            session.hours_decimal = 0
+            session.actual_minutes = 0
         sessions_list.append(session)
     
     # Pagination
@@ -436,7 +476,7 @@ def download_records(request):
     response['Content-Disposition'] = f'attachment; filename="teaching_records_{lecturer.lecturer_id}.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Date', 'Subject Code', 'Subject Name', 'Time In', 'Time Out', 'Minutes', 'Hours', 'Week Number', 'Month'])
+    writer.writerow(['Date', 'Subject Code', 'Subject Name', 'Lecture Type', 'Time In', 'Time Out', 'Minutes', 'Hours', 'Week Number', 'Month'])
     
     for session in sessions:
         hours = round(session.minutes / 60, 2)
@@ -444,6 +484,7 @@ def download_records(request):
             session.date.strftime('%Y-%m-%d'),
             session.subject.subject_code,
             session.subject.subject_name,
+            session.lecture_type if hasattr(session, 'lecture_type') and session.lecture_type else '-',
             session.time_in.strftime('%H:%M') if session.time_in else '-',
             session.time_out.strftime('%H:%M') if session.time_out else '-',
             session.minutes,
