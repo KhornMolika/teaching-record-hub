@@ -1,8 +1,15 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Sum, Count, Q
+from django.http import HttpResponse
+from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile
+from analytics.services.parser import parse_xlsb_and_create_sessions
+from django.shortcuts import render, redirect, get_object_or_404
+from datetime import time
+import csv
 
 
 # Custom decorators for role-based access control
@@ -136,10 +143,380 @@ def home(request):
 
 
 @lecturer_required
-def teaching_records(request):
-    return render(request, 'analytics/lecturer/teaching_records.html')
-
-
-@lecturer_required
 def workload(request):
     return render(request, 'analytics/lecturer/workload.html')
+
+
+# Lecturer - Teaching Records page
+
+@login_required
+def teaching_records(request):
+    """Display teaching records for the logged-in lecturer"""
+    try:
+        # Get lecturer associated with current user
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found for your account.")
+        return redirect('dashboard')
+    
+    # Get all sessions for this lecturer
+    sessions_query = TeachingSession.objects.filter(
+        lecturer=lecturer
+    ).select_related('subject', 'teaching_file').order_by('-date')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        sessions_query = sessions_query.filter(
+            Q(subject__subject_code__icontains=search_query) |
+            Q(subject__subject_name__icontains=search_query)
+        )
+    
+    # Filter by subject
+    selected_subject = request.GET.get('subject', '')
+    if selected_subject:
+        sessions_query = sessions_query.filter(subject_id=selected_subject)
+    
+    # Filter by date range
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if date_from:
+        sessions_query = sessions_query.filter(date__gte=date_from)
+    if date_to:
+        sessions_query = sessions_query.filter(date__lte=date_to)
+    
+    # Filter by time range
+    time_from = request.GET.get('time_from', '')
+    time_to = request.GET.get('time_to', '')
+    
+    if time_from:
+        try:
+            time_from_obj = time.fromisoformat(time_from)
+            sessions_query = sessions_query.filter(time_in__gte=time_from_obj)
+        except ValueError:
+            pass
+    
+    if time_to:
+        try:
+            time_to_obj = time.fromisoformat(time_to)
+            sessions_query = sessions_query.filter(time_out__lte=time_to_obj)
+        except ValueError:
+            pass
+    
+    # Calculate statistics
+    stats = sessions_query.aggregate(
+        total_sessions=Count('id'),
+        total_minutes=Sum('minutes')
+    )
+    
+    total_sessions = stats['total_sessions'] or 0
+    total_minutes = stats['total_minutes'] or 0
+    total_hours = round(total_minutes / 60, 2) if total_minutes else 0
+    avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
+    
+    # Add hours field to each session with accurate calculation
+    sessions_list = []
+    for session in sessions_query:
+        # Calculate hours from minutes, ensuring accurate conversion
+        if session.minutes:
+            session.hours = round(session.minutes / 60, 2)
+        else:
+            session.hours = 0
+        sessions_list.append(session)
+    
+    # Pagination
+    paginator = Paginator(sessions_list, 20)  # Show 20 sessions per page
+    page_number = request.GET.get('page', 1)
+    sessions = paginator.get_page(page_number)
+    
+    # Get all subjects for filter dropdown
+    subjects = Subject.objects.filter(
+        sessions__lecturer=lecturer
+    ).distinct().order_by('subject_code')
+    
+    # Get all files for files tab
+    files_query = TeachingFile.objects.filter(
+        lecturer=lecturer
+    ).order_by('-upload_date')
+    
+    # Add session count and parsed status to each file
+    files_list = []
+    for file in files_query:
+        file.session_count = file.sessions.count()
+        file.is_parsed = file.session_count > 0 or bool(file.semester)
+        files_list.append(file)
+    
+    # Calculate file statistics
+    total_files = len(files_list)
+    parsed_files = sum(1 for f in files_list if f.is_parsed)
+    pending_files = total_files - parsed_files
+    
+    # Build filter params for pagination links
+    filter_params = ''
+    if search_query:
+        filter_params += f'&search={search_query}'
+    if selected_subject:
+        filter_params += f'&subject={selected_subject}'
+    if date_from:
+        filter_params += f'&date_from={date_from}'
+    if date_to:
+        filter_params += f'&date_to={date_to}'
+    if time_from:
+        filter_params += f'&time_from={time_from}'
+    if time_to:
+        filter_params += f'&time_to={time_to}'
+    
+    search_param = f'&search={search_query}' if search_query else ''
+    
+    context = {
+        'sessions': sessions,
+        'subjects': subjects,
+        'selected_subject': selected_subject,
+        'search_query': search_query,
+        'search_param': search_param,
+        'filter_params': filter_params,
+        'date_from': date_from,
+        'date_to': date_to,
+        'time_from': time_from,
+        'time_to': time_to,
+        'files': files_list,
+        'stats': {
+            'total_sessions': total_sessions,
+            'total_hours': total_hours,
+            'avg_per_session': avg_per_session,
+        },
+        'file_stats': {
+            'total': total_files,
+            'parsed': parsed_files,
+            'pending': pending_files,
+        }
+    }
+    
+    return render(request, 'analytics/lecturer/teaching_records.html', context)
+
+
+@login_required
+def upload_files(request):
+    """Handle file uploads from the teaching records page"""
+    if request.method != 'POST':
+        return redirect('teaching_records')
+    
+    try:
+        # Get lecturer associated with current user
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found for your account.")
+        return redirect('teaching_records')
+    
+    files = request.FILES.getlist('files')
+    auto_parse = request.POST.get('auto_parse') == 'on'
+    
+    if not files:
+        messages.error(request, "Please select at least one file.")
+        return redirect('teaching_records')
+    
+    uploaded_files = []
+    total_created = 0
+    errors = []
+    
+    # Upload all files
+    for file in files:
+        # Validate file extension
+        if not file.name.endswith('.xlsb'):
+            errors.append(f"{file.name}: Not an XLSB file")
+            continue
+        
+        try:
+            # Create TeachingFile record
+            teaching_file = TeachingFile.objects.create(
+                lecturer=lecturer,
+                file_name=file,
+                semester=""  # Will be auto-filled by parser
+            )
+            uploaded_files.append(teaching_file)
+        except Exception as e:
+            errors.append(f"{file.name}: {str(e)}")
+    
+    # Auto-parse if requested
+    if auto_parse and uploaded_files:
+        for teaching_file in uploaded_files:
+            try:
+                created = parse_xlsb_and_create_sessions(teaching_file)
+                total_created += created
+            except Exception as e:
+                errors.append(f"{teaching_file.file_name.name}: {str(e)}")
+    
+    # Show results
+    if uploaded_files:
+        if auto_parse:
+            messages.success(
+                request,
+                f"Successfully uploaded {len(uploaded_files)} files and created {total_created} teaching sessions."
+            )
+        else:
+            messages.success(
+                request,
+                f"Successfully uploaded {len(uploaded_files)} files. They will be parsed by admin."
+            )
+    
+    if errors:
+        error_msg = "Some errors occurred: " + "; ".join(errors)
+        messages.warning(request, error_msg)
+    
+    return redirect('teaching_records')
+
+
+@login_required
+def parse_file(request, file_id):
+    """Parse a single file manually"""
+    if request.method != 'POST':
+        return redirect('teaching_records')
+    
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+        teaching_file = get_object_or_404(TeachingFile, id=file_id, lecturer=lecturer)
+        
+        # Parse the file
+        created = parse_xlsb_and_create_sessions(teaching_file)
+        
+        messages.success(request, f"Successfully parsed file and created {created} teaching sessions.")
+        
+    except Exception as e:
+        messages.error(request, f"Error parsing file: {str(e)}")
+    
+    return redirect('teaching_records')
+
+
+@login_required
+def delete_file(request, file_id):
+    """Delete a file and all its sessions"""
+    if request.method != 'POST':
+        return redirect('teaching_records')
+    
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+        teaching_file = get_object_or_404(TeachingFile, id=file_id, lecturer=lecturer)
+        
+        # Count sessions before deleting
+        session_count = teaching_file.sessions.count()
+        file_name = teaching_file.file_name.name
+        
+        # Delete file (cascade will delete sessions)
+        teaching_file.delete()
+        
+        messages.success(
+            request, 
+            f"Deleted file '{file_name}' and {session_count} associated sessions."
+        )
+        
+    except Exception as e:
+        messages.error(request, f"Error deleting file: {str(e)}")
+    
+    return redirect('teaching_records')
+
+
+@login_required
+def download_records(request):
+    """Download teaching records as CSV"""
+    try:
+        # Get lecturer associated with current user
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found for your account.")
+        return redirect('teaching_records')
+    
+    # Get all sessions
+    sessions = TeachingSession.objects.filter(
+        lecturer=lecturer
+    ).select_related('subject').order_by('-date')
+    
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="teaching_records_{lecturer.lecturer_id}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Subject Code', 'Subject Name', 'Time In', 'Time Out', 'Minutes', 'Hours', 'Week Number', 'Month'])
+    
+    for session in sessions:
+        hours = round(session.minutes / 60, 2)
+        writer.writerow([
+            session.date.strftime('%Y-%m-%d'),
+            session.subject.subject_code,
+            session.subject.subject_name,
+            session.time_in.strftime('%H:%M') if session.time_in else '-',
+            session.time_out.strftime('%H:%M') if session.time_out else '-',
+            session.minutes,
+            hours,
+            session.week_number,
+            session.month
+        ])
+    
+    return response
+
+
+@login_required
+def delete_session(request, session_id):
+    """Delete a single teaching session"""
+    if request.method != 'POST':
+        return redirect('teaching_records')
+    
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+        session = get_object_or_404(TeachingSession, id=session_id, lecturer=lecturer)
+        
+        session_date = session.date
+        subject_name = session.subject.subject_code
+        
+        # Delete session
+        session.delete()
+        
+        messages.success(
+            request, 
+            f"Deleted session: {subject_name} on {session_date}"
+        )
+        
+    except Exception as e:
+        messages.error(request, f"Error deleting session: {str(e)}")
+    
+    return redirect('teaching_records')
+
+
+@login_required
+def delete_sessions(request):
+    """Delete multiple teaching sessions"""
+    if request.method != 'POST':
+        return redirect('teaching_records')
+    
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+        session_ids = request.POST.getlist('session_ids')
+        
+        if not session_ids:
+            messages.error(request, "No sessions selected for deletion.")
+            return redirect('teaching_records')
+        
+        # Get sessions and verify they belong to this lecturer
+        sessions = TeachingSession.objects.filter(
+            id__in=session_ids,
+            lecturer=lecturer
+        )
+        
+        count = sessions.count()
+        
+        if count == 0:
+            messages.error(request, "No valid sessions found to delete.")
+            return redirect('teaching_records')
+        
+        # Delete sessions
+        sessions.delete()
+        
+        messages.success(
+            request, 
+            f"Successfully deleted {count} session(s)."
+        )
+        
+    except Exception as e:
+        messages.error(request, f"Error deleting sessions: {str(e)}")
+    
+    return redirect('teaching_records')

@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import date
+from datetime import datetime, time
 from django.db import transaction
 from analytics.models import TeachingSession, Subject
 import re
@@ -12,6 +12,43 @@ def to_minutes(x):
         h, m = x.split(":")
         return int(h) * 60 + int(m)
     return 0
+
+
+def parse_time(x):
+    """Parse time from various formats (HH:MM AM/PM or HH:MM 24-hour)"""
+    if pd.isna(x):
+        return None
+    
+    x_str = str(x).strip()
+    
+    # Handle empty strings
+    if not x_str or x_str == 'nan':
+        return None
+    
+    # Try parsing HH:MM format (24-hour)
+    if ':' in x_str:
+        try:
+            # Remove any AM/PM and extra spaces
+            x_str = x_str.replace('AM', '').replace('PM', '').strip()
+            parts = x_str.split(':')
+            if len(parts) == 2:
+                hour = int(parts[0])
+                minute = int(parts[1])
+                return time(hour, minute)
+        except:
+            pass
+    
+    # Handle Excel serial time (fraction of day)
+    try:
+        if isinstance(x, float) and 0 <= x < 1:
+            seconds = int(x * 86400)
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            return time(hours, minutes)
+    except:
+        pass
+    
+    return None
 
 
 def extract_subject_and_semester(file_path):
@@ -163,9 +200,9 @@ def parse_xlsb_and_create_sessions(teaching_file):
         header=None
     )
 
-    # Column mapping
-    df = df[[1, 5]]
-    df.columns = ["date_raw", "time_raw"]
+    # Column mapping - Column 1=Date, 2=Time In, 3=Time Out, 5=ATH (total minutes)
+    df = df[[1, 2, 3, 5]]
+    df.columns = ["date_raw", "time_in_raw", "time_out_raw", "time_raw"]
 
     # Convert Excel serial date
     df["date"] = pd.to_datetime(
@@ -174,8 +211,15 @@ def parse_xlsb_and_create_sessions(teaching_file):
         origin="1899-12-30",
         errors="coerce"
     ).dt.date
-
+    
+    # Parse time_in and time_out
+    df["time_in"] = df["time_in_raw"].apply(parse_time)
+    df["time_out"] = df["time_out_raw"].apply(parse_time)
+    
+    # Parse minutes
     df["minutes"] = df["time_raw"].apply(to_minutes)
+    
+    # Filter valid rows
     df = df.dropna(subset=["date"])
     df = df[df["minutes"] > 0]
 
@@ -199,6 +243,8 @@ def parse_xlsb_and_create_sessions(teaching_file):
                     defaults={
                         "teaching_file": teaching_file,
                         "minutes": row.minutes,
+                        "time_in": row.time_in,
+                        "time_out": row.time_out,
                         "week_number": week_number,
                         "month": month,
                     }
@@ -206,14 +252,26 @@ def parse_xlsb_and_create_sessions(teaching_file):
                 
                 if was_created:
                     created += 1
+                    print(f"  Created: {row.date} | {row.time_in} - {row.time_out} | {row.minutes} mins")
                 else:
-                    # Update existing session if minutes changed
+                    # Update existing session if data changed
+                    changed = False
                     if obj.minutes != row.minutes:
                         obj.minutes = row.minutes
+                        changed = True
+                    if obj.time_in != row.time_in:
+                        obj.time_in = row.time_in
+                        changed = True
+                    if obj.time_out != row.time_out:
+                        obj.time_out = row.time_out
+                        changed = True
+                    
+                    if changed:
                         obj.week_number = week_number
                         obj.month = month
                         obj.save()
                         updated += 1
+                        print(f"  Updated: {row.date} | {row.time_in} - {row.time_out} | {row.minutes} mins")
                     else:
                         skipped += 1
                         

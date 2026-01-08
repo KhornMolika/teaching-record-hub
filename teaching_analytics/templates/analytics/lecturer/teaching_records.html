@@ -1,5 +1,7 @@
-{% extends "../base.html" %} {% block title %}My Teaching Records{% endblock %}
-{%block content %}
+{% extends "../base.html" %} 
+{% block title %}My Teaching Records{% endblock %}
+
+{% block content %}
 <div class="flex min-h-screen bg-gray-50">
   <!-- Include Sidebar -->
   {% include "./sidebar.html" %}
@@ -12,286 +14,777 @@
       <p class="text-gray-500 mt-1">View and track your teaching sessions</p>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-3 gap-6 mb-8">
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="text-sm text-gray-500 mb-2">Total Sessions</div>
-        <div class="text-4xl font-bold text-gray-900">8</div>
+    <!-- Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+      <nav class="flex gap-8">
+        <button 
+          onclick="switchTab('sessions')" 
+          id="sessionsTab"
+          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition border-teal-600 text-teal-600">
+          📚 Teaching Sessions
+        </button>
+        <button 
+          onclick="switchTab('files')" 
+          id="filesTab"
+          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          📁 Uploaded Files
+        </button>
+      </nav>
+    </div>
+
+    <!-- Sessions Tab Content -->
+    <div id="sessionsContent">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div class="text-sm text-gray-500 mb-2">Total Sessions</div>
+          <div class="text-4xl font-bold text-gray-900">{{ stats.total_sessions }}</div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div class="text-sm text-gray-500 mb-2">Total Hours</div>
+          <div class="text-4xl font-bold text-gray-900">{{ stats.total_hours }}h</div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div class="text-sm text-gray-500 mb-2">Avg per Session</div>
+          <div class="text-4xl font-bold text-gray-900">{{ stats.avg_per_session }}h</div>
+        </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="text-sm text-gray-500 mb-2">Total Hours</div>
-        <div class="text-4xl font-bold text-gray-900">16.0h</div>
-      </div>
+      <!-- Teaching Sessions Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="p-6">
+          <!-- Table Header with Actions -->
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+              <h2 class="text-xl font-bold text-gray-900">Teaching Sessions</h2>
+              <span class="text-sm text-gray-500" id="selectedCount" style="display: none;">
+                <span id="selectedNumber">0</span> selected
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Bulk Delete Button (hidden by default) -->
+              <button
+                id="bulkDeleteBtn"
+                onclick="bulkDeleteSessions()"
+                style="display: none;"
+                class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span class="text-sm font-medium">Delete Selected</span>
+              </button>
 
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="text-sm text-gray-500 mb-2">Avg per Session</div>
-        <div class="text-4xl font-bold text-gray-900">2.0h</div>
+              <!-- Search -->
+              <form method="get" action="" class="relative">
+                <input
+                  type="text"
+                  name="search"
+                  value="{{ search_query }}"
+                  placeholder="Search records..."
+                  class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-64"
+                />
+                <svg
+                  class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </form>
+
+              <!-- Filter Button -->
+              <button
+                onclick="document.getElementById('filterModal').classList.remove('hidden')"
+                class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition {% if selected_subject or date_from or date_to or time_from or time_to %}bg-teal-50 border-teal-300{% endif %}"
+              >
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="text-sm font-medium">Filters</span>
+                {% if selected_subject or date_from or date_to or time_from or time_to %}
+                  <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-teal-600 rounded-full">
+                    {% if selected_subject %}1{% endif %}{% if date_from %}1{% endif %}{% if date_to %}1{% endif %}{% if time_from %}1{% endif %}{% if time_to %}1{% endif %}
+                  </span>
+                {% endif %}
+              </button>
+
+              <!-- Upload Button -->
+              <button
+                onclick="document.getElementById('uploadModal').classList.remove('hidden')"
+                class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span class="text-sm font-medium">Upload</span>
+              </button>
+
+              <!-- Download Button -->
+              <a href="{% url 'download_records' %}" class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Active Filters Display -->
+          {% if selected_subject or date_from or date_to or time_from or time_to %}
+          <div class="mb-4 flex flex-wrap gap-2">
+            {% if selected_subject %}
+            {% for subject in subjects %}
+              {% if subject.id|stringformat:"s" == selected_subject %}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm">
+              <span>Subject: {{ subject.subject_code }}</span>
+              <a href="?search={{ search_query }}&date_from={{ date_from }}&date_to={{ date_to }}&time_from={{ time_from }}&time_to={{ time_to }}" class="hover:text-teal-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </a>
+            </div>
+              {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% if date_from %}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              <span>From: {{ date_from }}</span>
+              <a href="?search={{ search_query }}&subject={{ selected_subject }}&date_to={{ date_to }}&time_from={{ time_from }}&time_to={{ time_to }}" class="hover:text-blue-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </a>
+            </div>
+            {% endif %}
+            {% if date_to %}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              <span>To: {{ date_to }}</span>
+              <a href="?search={{ search_query }}&subject={{ selected_subject }}&date_from={{ date_from }}&time_from={{ time_from }}&time_to={{ time_to }}" class="hover:text-blue-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </a>
+            </div>
+            {% endif %}
+            {% if time_from %}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+              <span>Time From: {{ time_from }}</span>
+              <a href="?search={{ search_query }}&subject={{ selected_subject }}&date_from={{ date_from }}&date_to={{ date_to }}&time_to={{ time_to }}" class="hover:text-purple-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </a>
+            </div>
+            {% endif %}
+            {% if time_to %}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+              <span>Time To: {{ time_to }}</span>
+              <a href="?search={{ search_query }}&subject={{ selected_subject }}&date_from={{ date_from }}&date_to={{ date_to }}&time_from={{ time_from }}" class="hover:text-purple-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </a>
+            </div>
+            {% endif %}
+            <a href="{% url 'teaching_records' %}" class="inline-flex items-center gap-1 px-3 py-1 text-gray-600 hover:text-gray-900 text-sm font-medium">
+              Clear All
+            </a>
+          </div>
+          {% endif %}
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-200">
+                  <th class="text-left py-3 px-4 w-12">
+                    <input 
+                      type="checkbox" 
+                      id="selectAll" 
+                      onchange="toggleSelectAll(this)"
+                      class="w-4 h-4 text-teal-600 rounded cursor-pointer"
+                    />
+                  </th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Subject</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Time In</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Time Out</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Duration</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Source File</th>
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if sessions %}
+                  {% for session in sessions %}
+                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-4 px-4">
+                      <input 
+                        type="checkbox" 
+                        name="session_ids" 
+                        value="{{ session.id }}"
+                        onchange="updateSelectedCount()"
+                        class="session-checkbox w-4 h-4 text-teal-600 rounded cursor-pointer"
+                      />
+                    </td>
+                    <td class="py-4 px-4 text-sm text-gray-700">{{ session.date|date:"Y-m-d" }}</td>
+                    <td class="py-4 px-4">
+                      <div class="text-sm font-medium text-gray-900">{{ session.subject.subject_code }}</div>
+                      <div class="text-xs text-gray-500">{{ session.subject.subject_name }}</div>
+                    </td>
+                    <td class="py-4 px-4 text-sm text-gray-700">
+                      {% if session.time_in %}
+                        <span class="inline-flex items-center gap-1">
+                          <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {{ session.time_in|time:"H:i" }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400">-</span>
+                      {% endif %}
+                    </td>
+                    <td class="py-4 px-4 text-sm text-gray-700">
+                      {% if session.time_out %}
+                        <span class="inline-flex items-center gap-1">
+                          <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {{ session.time_out|time:"H:i" }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400">-</span>
+                      {% endif %}
+                    </td>
+                    <td class="py-4 px-4">
+                      <div class="text-sm font-semibold text-indigo-600">
+                        {{ session.hours }}h
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ session.minutes }} mins
+                      </div>
+                    </td>
+                    <td class="py-4 px-4 text-xs text-gray-500">
+                      {{ session.teaching_file.file_name.name|truncatechars:30 }}
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                      <button
+                        onclick="deleteSingleSession( session.id )"
+                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete Session"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="8" class="py-8 text-center text-gray-500">
+                      <div class="flex flex-col items-center gap-2">
+                        <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-lg font-medium">No teaching sessions found</p>
+                        <p class="text-sm">Upload your first XLSB file to get started</p>
+                      </div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if sessions.has_other_pages %}
+          <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+            <div class="text-sm text-gray-600">
+              Showing {{ sessions.start_index }} to {{ sessions.end_index }} of {{ sessions.paginator.count }} sessions
+            </div>
+            <div class="flex gap-2">
+              {% if sessions.has_previous %}
+              <a href="?page={{ sessions.previous_page_number }}{{ filter_params }}" 
+                 class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Previous</a>
+              {% endif %}
+              {% for num in sessions.paginator.page_range %}
+                {% if sessions.number == num %}
+                <span class="px-4 py-2 bg-teal-600 text-white rounded-lg">{{ num }}</span>
+                {% elif num > sessions.number|add:'-3' and num < sessions.number|add:'3' %}
+                <a href="?page={{ num }}{{ filter_params }}" 
+                   class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">{{ num }}</a>
+                {% endif %}
+              {% endfor %}
+              {% if sessions.has_next %}
+              <a href="?page={{ sessions.next_page_number }}{{ filter_params }}" 
+                 class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
-    <!-- Teaching Sessions Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-      <div class="p-6">
-        <!-- Table Header with Actions -->
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-bold text-gray-900">Teaching Sessions</h2>
-          <div class="flex items-center gap-3">
-            <!-- Search -->
-            <div class="relative">
-              <input
-                type="text"
-                placeholder="Search records..."
-                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-64"
-              />
-              <svg
-                class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-
-            <!-- Filter Dropdown -->
-            <div class="relative">
-              <button
-                class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                  />
-                </svg>
-                <span class="text-sm font-medium">All Subjects</span>
-                <svg
-                  class="w-4 h-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Upload Button -->
+    <!-- Files Tab Content (keeping original) -->
+    <div id="filesContent" class="hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-900">Uploaded Files</h2>
             <button
-              class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                />
+              onclick="document.getElementById('uploadModal').classList.remove('hidden')"
+              class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span class="text-sm font-medium">Upload</span>
-            </button>
-
-            <!-- Download Button -->
-            <button
-              class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <svg
-                class="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              <span class="text-sm font-medium">Upload New Files</span>
             </button>
           </div>
-        </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-gray-200">
-                <th
-                  class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
-                >
-                  Date
-                </th>
-                <th
-                  class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
-                >
-                  Subject
-                </th>
-                <th
-                  class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
-                >
-                  Time In
-                </th>
-                <th
-                  class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
-                >
-                  Time Out
-                </th>
-                <th
-                  class="text-right py-3 px-4 text-sm font-semibold text-gray-600"
-                >
-                  Hours
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Row 1 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-15</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Data Structures
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">09:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">11:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
+          <!-- File Statistics -->
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div class="text-sm text-blue-600 mb-1">Total Files</div>
+              <div class="text-2xl font-bold text-blue-900">{{ file_stats.total }}</div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div class="text-sm text-green-600 mb-1">Parsed Files</div>
+              <div class="text-2xl font-bold text-green-900">{{ file_stats.parsed }}</div>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+              <div class="text-sm text-yellow-600 mb-1">Pending Files</div>
+              <div class="text-2xl font-bold text-yellow-900">{{ file_stats.pending }}</div>
+            </div>
+          </div>
 
-              <!-- Row 2 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-15</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Algorithms
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">14:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">16:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
-
-              <!-- Row 3 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-16</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Database Systems
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">10:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">12:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
-
-              <!-- Row 4 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-17</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Data Structures
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">09:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">11:30</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2.5h
-                </td>
-              </tr>
-
-              <!-- Row 5 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-17</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Algorithms
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">14:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">15:30</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  1.5h
-                </td>
-              </tr>
-
-              <!-- Row 6 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-18</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Database Systems
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">10:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">12:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
-
-              <!-- Row 7 -->
-              <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-19</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Data Structures
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">09:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">11:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
-
-              <!-- Row 8 -->
-              <tr class="hover:bg-gray-50 transition">
-                <td class="py-4 px-4 text-sm text-gray-700">2024-01-22</td>
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">
-                  Algorithms
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">14:00</td>
-                <td class="py-4 px-4 text-sm text-gray-700">16:00</td>
-                <td
-                  class="py-4 px-4 text-sm font-semibold text-indigo-600 text-right"
-                >
-                  2h
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Files Table (keeping original) -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-200">
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">File Name</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Semester</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Upload Date</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
+                  <th class="text-right py-3 px-4 text-sm font-semibold text-gray-600">Sessions</th>
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if files %}
+                  {% for file in files %}
+                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-4 px-4">
+                      <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">{{ file.file_name.name|truncatechars:40 }}</span>
+                      </div>
+                    </td>
+                    <td class="py-4 px-4 text-sm text-gray-700">
+                      {% if file.semester %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {{ file.semester }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400">-</span>
+                      {% endif %}
+                    </td>
+                    <td class="py-4 px-4 text-sm text-gray-700">{{ file.upload_date|date:"M d, Y H:i" }}</td>
+                    <td class="py-4 px-4">
+                      {% if file.is_parsed %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                          Parsed
+                        </span>
+                      {% else %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                          Pending
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td class="py-4 px-4 text-sm font-semibold text-gray-900 text-right">{{ file.session_count }}</td>
+                    <td class="py-4 px-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        {% if not file.is_parsed %}
+                        <form method="post" action="{% url 'parse_file' file.id %}" class="inline">
+                          {% csrf_token %}
+                          <button type="submit" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Parse Now">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="{% url 'delete_file' file.id %}" class="inline" onsubmit="return confirm('Delete this file and all its sessions?')">
+                          {% csrf_token %}
+                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-500">
+                      <div class="flex flex-col items-center gap-2">
+                        <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-lg font-medium">No files uploaded yet</p>
+                        <p class="text-sm">Click "Upload New Files" to get started</p>
+                      </div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Filter Modal -->
+<div id="filterModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">🔍 Filter Sessions</h2>
+      <button onclick="document.getElementById('filterModal').classList.add('hidden')" 
+              class="text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form method="get" action="{% url 'teaching_records' %}" id="filterForm">
+      <input type="hidden" name="search" value="{{ search_query }}">
+      
+      <!-- Subject Filter -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+        <select 
+          name="subject"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+        >
+          <option value="">All Subjects</option>
+          {% for subject in subjects %}
+          <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>
+            {{ subject.subject_code }} - {{ subject.subject_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Date Range -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">From Date</label>
+            <input
+              type="date"
+              name="date_from"
+              value="{{ date_from }}"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">To Date</label>
+            <input
+              type="date"
+              name="date_to"
+              value="{{ date_to }}"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Range -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">From Time</label>
+            <input
+              type="time"
+              name="time_from"
+              value="{{ time_from }}"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">To Time</label>
+            <input
+              type="time"
+              name="time_to"
+              value="{{ time_to }}"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 justify-end">
+        <a href="{% url 'teaching_records' %}" 
+           class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          Clear All
+        </a>
+        <button type="button" 
+                onclick="document.getElementById('filterModal').classList.add('hidden')"
+                class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="submit" 
+                class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+          Apply Filters
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">📁 Upload Teaching Files</h2>
+      <button onclick="document.getElementById('uploadModal').classList.add('hidden')" 
+              class="text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'upload_files' %}" id="uploadForm">
+      {% csrf_token %}
+      
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Select XLSB Files <span class="text-red-500">*</span>
+        </label>
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-teal-500 transition cursor-pointer"
+             onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" name="files" multiple accept=".xlsb" class="hidden" onchange="showFileList()" required>
+          <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <p class="text-gray-600 mb-2">Click to browse or drag and drop</p>
+          <p class="text-sm text-gray-500">XLSB files only</p>
+        </div>
+      </div>
+
+      <div id="fileList" class="mb-6 hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Selected Files:</label>
+        <div id="fileItems" class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto"></div>
+      </div>
+
+      <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <label class="flex items-start cursor-pointer">
+          <input type="checkbox" name="auto_parse" checked class="mt-1 mr-3 w-5 h-5 text-teal-600 rounded">
+          <div>
+            <span class="font-medium text-gray-900">⚡ Auto-parse files after upload</span>
+            <p class="text-sm text-gray-600 mt-1">
+              Files will be processed immediately and teaching sessions will be created automatically.
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button type="button" 
+                onclick="document.getElementById('uploadModal').classList.add('hidden')"
+                class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="submit" 
+                class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+          📤 Upload Files
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  const sessionsTab = document.getElementById('sessionsTab');
+  const filesTab = document.getElementById('filesTab');
+  const sessionsContent = document.getElementById('sessionsContent');
+  const filesContent = document.getElementById('filesContent');
+
+  if (tab === 'sessions') {
+    sessionsTab.classList.add('border-teal-600', 'text-teal-600');
+    sessionsTab.classList.remove('border-transparent', 'text-gray-500');
+    filesTab.classList.add('border-transparent', 'text-gray-500');
+    filesTab.classList.remove('border-teal-600', 'text-teal-600');
+    sessionsContent.classList.remove('hidden');
+    filesContent.classList.add('hidden');
+  } else {
+    filesTab.classList.add('border-teal-600', 'text-teal-600');
+    filesTab.classList.remove('border-transparent', 'text-gray-500');
+    sessionsTab.classList.add('border-transparent', 'text-gray-500');
+    sessionsTab.classList.remove('border-teal-600', 'text-teal-600');
+    filesContent.classList.remove('hidden');
+    sessionsContent.classList.add('hidden');
+  }
+}
+
+function showFileList() {
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  const fileItems = document.getElementById('fileItems');
+  const files = fileInput.files;
+
+  if (files.length > 0) {
+    fileList.classList.remove('hidden');
+    fileItems.innerHTML = '';
+
+    for (let i = 0; i < files.length; i++) {
+      const fileDiv = document.createElement('div');
+      fileDiv.className = 'flex justify-between items-center p-3 bg-white rounded-lg mb-2';
+      
+      const fileName = document.createElement('span');
+      fileName.textContent = `${i + 1}. ${files[i].name}`;
+      fileName.className = 'text-sm text-gray-700';
+      
+      const fileSize = document.createElement('span');
+      const sizeInMB = (files[i].size / (1024 * 1024)).toFixed(2);
+      fileSize.textContent = `${sizeInMB} MB`;
+      fileSize.className = 'text-sm text-gray-500';
+      
+      fileDiv.appendChild(fileName);
+      fileDiv.appendChild(fileSize);
+      fileItems.appendChild(fileDiv);
+    }
+  } else {
+    fileList.classList.add('hidden');
+  }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  const button = this.querySelector('button[type="submit"]');
+  button.disabled = true;
+  button.innerHTML = '⏳ Uploading...';
+});
+
+// Session deletion functions
+function toggleSelectAll(checkbox) {
+  const checkboxes = document.querySelectorAll('.session-checkbox');
+  checkboxes.forEach(cb => {
+    cb.checked = checkbox.checked;
+  });
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
+  const count = checkboxes.length;
+  const selectedCount = document.getElementById('selectedCount');
+  const selectedNumber = document.getElementById('selectedNumber');
+  const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+  const selectAll = document.getElementById('selectAll');
+  
+  selectedNumber.textContent = count;
+  
+  if (count > 0) {
+    selectedCount.style.display = 'inline';
+    bulkDeleteBtn.style.display = 'flex';
+  } else {
+    selectedCount.style.display = 'none';
+    bulkDeleteBtn.style.display = 'none';
+  }
+  
+  // Update select all checkbox state
+  const allCheckboxes = document.querySelectorAll('.session-checkbox');
+  selectAll.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+  selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
+}
+
+function bulkDeleteSessions() {
+  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
+  const sessionIds = Array.from(checkboxes).map(cb => cb.value);
+  
+  if (sessionIds.length === 0) {
+    alert('Please select sessions to delete');
+    return;
+  }
+  
+  if (confirm(`Are you sure you want to delete ${sessionIds.length} session(s)?`)) {
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "delete_sessions" %}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = 'csrfmiddlewaretoken';
+      csrfInput.value = csrfToken.value;
+      form.appendChild(csrfInput);
+    }
+    
+    // Add session IDs
+    sessionIds.forEach(id => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'session_ids';
+      input.value = id;
+      form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+function deleteSingleSession(sessionId) {
+  if (confirm('Are you sure you want to delete this session?')) {
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `{% url "delete_session" 0 %}`.replace('0', sessionId);
+    
+    // Add CSRF token from upload form
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = 'csrfmiddlewaretoken';
+      csrfInput.value = csrfToken.value;
+      form.appendChild(csrfInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+</script>
 {% endblock %}
