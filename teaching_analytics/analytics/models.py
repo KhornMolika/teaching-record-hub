@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 # Supports payroll later
 # Multi‑lecturer ready
@@ -31,7 +32,11 @@ class TeachingFile(models.Model):
     lecturer = models.ForeignKey(
         Lecturer, on_delete=models.CASCADE, related_name="teaching_files"
     )
-    file_name = models.FileField(upload_to="teaching_files/")
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.PROTECT,
+    )
+    file_name = models.FileField(upload_to="media/teaching_files/")
     upload_date = models.DateTimeField(auto_now_add=True)
     semester = models.CharField(max_length=50)
 
@@ -59,6 +64,15 @@ class TeachingSession(models.Model):
 
     week_number = models.PositiveSmallIntegerField()
     month = models.PositiveSmallIntegerField()
+
+    def clean(self):
+        # Logical validation (business rules)
+        if self.minutes == 0:
+            raise ValidationError("Minutes must be greater than zero.")
+
+        if self.time_in and self.time_out:
+            if self.time_out <= self.time_in:
+                raise ValidationError("time_out must be after time_in.")
 
     class Meta:
         unique_together = ("lecturer", "subject", "date")
