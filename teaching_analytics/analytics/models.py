@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 # Multi‑lecturer ready
 class Lecturer(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
-    lecturer_id = models.CharField(max_length=50, unique=True)
+    lecturer_id = models.CharField(max_length=50, unique=True)    
     department = models.CharField(max_length=100)
     hourly_rate = models.DecimalField(
         max_digits=8, decimal_places=2, blank=True, null=True
