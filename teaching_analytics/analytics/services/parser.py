@@ -200,9 +200,23 @@ def parse_xlsb_and_create_sessions(teaching_file):
         header=None
     )
 
-    # Column mapping - Column 1=Date, 2=Time In, 3=Time Out, 5=ATH (total minutes)
-    df = df[[1, 2, 3, 5]]
-    df.columns = ["date_raw", "time_in_raw", "time_out_raw", "time_raw"]
+    print(f"Total rows read: {len(df)}")
+    print(f"Available columns: {df.shape[1]}")
+
+    # CORRECT Column mapping based on actual file structure:
+    # Column 1 = Date (Excel serial)
+    # Column 2 = Time In (Excel decimal)
+    # Column 3 = Time Out (Excel decimal)
+    # Column 6 = Lecture Type (e.g., "Introduction", "Topology")
+    # Column 16 = Session Duration in minutes (e.g., 180)
+    
+    if df.shape[1] < 17:
+        raise ValueError(f"Not enough columns in file. Expected at least 17, found {df.shape[1]}")
+    
+    df = df[[1, 2, 3, 6, 16]]
+    df.columns = ["date_raw", "time_in_raw", "time_out_raw", "lecture_type_raw", "minutes_raw"]
+
+    print(f"\nProcessing data...")
 
     # Convert Excel serial date
     df["date"] = pd.to_datetime(
@@ -212,18 +226,37 @@ def parse_xlsb_and_create_sessions(teaching_file):
         errors="coerce"
     ).dt.date
     
-    # Parse time_in and time_out
+    # Parse time_in and time_out (these are Excel decimal times)
     df["time_in"] = df["time_in_raw"].apply(parse_time)
     df["time_out"] = df["time_out_raw"].apply(parse_time)
     
-    # Parse minutes
-    df["minutes"] = df["time_raw"].apply(to_minutes)
+    # Get minutes directly from column 16
+    df["minutes"] = pd.to_numeric(df["minutes_raw"], errors='coerce').fillna(0).astype(int)
+    
+    # Parse lecture type
+    df["lecture_type"] = df["lecture_type_raw"].apply(
+        lambda x: str(x).strip() if pd.notna(x) and str(x).strip() != 'nan' else None
+    )
+    
+    # Show filtering steps
+    print(f"\nBefore filtering: {len(df)} rows")
+    print(f"Rows with valid dates: {df['date'].notna().sum()}")
+    print(f"Rows with minutes > 0: {(df['minutes'] > 0).sum()}")
     
     # Filter valid rows
     df = df.dropna(subset=["date"])
+    print(f"After dropping NaN dates: {len(df)} rows")
+    
     df = df[df["minutes"] > 0]
+    print(f"After filtering minutes > 0: {len(df)} rows")
 
-    print(f"Found {len(df)} valid teaching sessions in file")
+    print(f"\nFound {len(df)} valid teaching sessions in file")
+    
+    # Show first few sessions for verification
+    if len(df) > 0:
+        print("\nFirst 3 sessions:")
+        for idx, row in df.head(3).iterrows():
+            print(f"  {row['date']} | {row['lecture_type']} | {row['time_in']}-{row['time_out']} | {row['minutes']} mins")
 
     created = 0
     updated = 0
@@ -245,6 +278,7 @@ def parse_xlsb_and_create_sessions(teaching_file):
                         "minutes": row.minutes,
                         "time_in": row.time_in,
                         "time_out": row.time_out,
+                        "lecture_type": row.lecture_type,
                         "week_number": week_number,
                         "month": month,
                     }
@@ -252,7 +286,7 @@ def parse_xlsb_and_create_sessions(teaching_file):
                 
                 if was_created:
                     created += 1
-                    print(f"  Created: {row.date} | {row.time_in} - {row.time_out} | {row.minutes} mins")
+                    print(f"  Created: {row.date} | {row.lecture_type} | {row.time_in} - {row.time_out} | {row.minutes} mins")
                 else:
                     # Update existing session if data changed
                     changed = False
@@ -265,13 +299,16 @@ def parse_xlsb_and_create_sessions(teaching_file):
                     if obj.time_out != row.time_out:
                         obj.time_out = row.time_out
                         changed = True
+                    if obj.lecture_type != row.lecture_type:
+                        obj.lecture_type = row.lecture_type
+                        changed = True
                     
                     if changed:
                         obj.week_number = week_number
                         obj.month = month
                         obj.save()
                         updated += 1
-                        print(f"  Updated: {row.date} | {row.time_in} - {row.time_out} | {row.minutes} mins")
+                        print(f"  Updated: {row.date} | {row.lecture_type} | {row.time_in} - {row.time_out} | {row.minutes} mins")
                     else:
                         skipped += 1
                         
