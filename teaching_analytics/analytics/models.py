@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 # Supports payroll later
 # Multi‑lecturer ready
 class Lecturer(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     lecturer_id = models.CharField(max_length=50, unique=True)    
     department = models.CharField(max_length=100)
     hourly_rate = models.DecimalField(
@@ -14,7 +14,8 @@ class Lecturer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.get_full_name} ({self.lecturer_id})"
+        return f"{self.user.get_full_name()} ({self.lecturer_id})"
+
 
 # Enables per‑subject analytics
 class Subject(models.Model):
@@ -26,22 +27,22 @@ class Subject(models.Model):
     def __str__(self):
         return f"{self.subject_code} - {self.subject_name}"
 
+
 # Tracks XLSB uploads
 # Links file → lecturer
+# Subject is extracted from file automatically during parsing
 class TeachingFile(models.Model):
     lecturer = models.ForeignKey(
         Lecturer, on_delete=models.CASCADE, related_name="teaching_files"
     )
-    subject = models.ForeignKey(
-        Subject,
-        on_delete=models.PROTECT,
-    )
+    # REMOVED: subject field - now extracted from XLSB file automatically
     file_name = models.FileField(upload_to="media/teaching_files/")
     upload_date = models.DateTimeField(auto_now_add=True)
     semester = models.CharField(max_length=50)
 
     def __str__(self):
         return f"{self.file_name.name}"
+
 
 # One row = one teaching day
 # Prevents duplicate sessions
@@ -80,6 +81,7 @@ class TeachingSession(models.Model):
     def __str__(self):
         return f"{self.date} - {self.minutes} mins"
 
+
 # Phase‑1 manual reports
 # Phase‑2 analytics
 class TeachingSummary(models.Model):
@@ -103,7 +105,8 @@ class TeachingSummary(models.Model):
     def __str__(self):
         return f"Summary {self.lecturer} ({self.start_date} → {self.end_date})"
 
-# Clean separation of prediction logic#
+
+# Clean separation of prediction logic
 # Can be ignored until Phase‑3
 class WorkloadPrediction(models.Model):
     RISK_CHOICES = (
@@ -128,4 +131,3 @@ class WorkloadPrediction(models.Model):
 
     def __str__(self):
         return f"{self.lecturer} - {self.risk_level}"
-
