@@ -30,17 +30,25 @@ class Subject(models.Model):
 
 # Tracks XLSB uploads
 # Links file → lecturer
-# Subject is extracted from file automatically during parsing
+# Subject and semester are extracted from file automatically during parsing
 class TeachingFile(models.Model):
     lecturer = models.ForeignKey(
         Lecturer, on_delete=models.CASCADE, related_name="teaching_files"
     )
-    # REMOVED: subject field - now extracted from XLSB file automatically
     file_name = models.FileField(upload_to="media/teaching_files/")
     upload_date = models.DateTimeField(auto_now_add=True)
-    semester = models.CharField(max_length=50)
+    
+    # Auto-filled by parser after upload
+    semester = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True,
+        help_text="Auto-filled from XLSB file when parsed"
+    )
 
     def __str__(self):
+        if self.semester:
+            return f"{self.file_name.name} ({self.semester})"
         return f"{self.file_name.name}"
 
 

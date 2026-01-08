@@ -48,14 +48,27 @@ class SubjectAdmin(admin.ModelAdmin):
 # ----------------------------
 @admin.action(description="Parse XLSB → Create Teaching Sessions")
 def parse_xlsb_files(modeladmin, request, queryset):
-    total = 0
+    total_created = 0
+    total_updated = 0
+    errors = []
+    
     for teaching_file in queryset:
-        created = parse_xlsb_and_create_sessions(teaching_file)
-        total += created
+        try:
+            created = parse_xlsb_and_create_sessions(teaching_file)
+            total_created += created
+        except Exception as e:
+            errors.append(f"{teaching_file.file_name.name}: {str(e)}")
 
-    modeladmin.message_user(
-        request, f"Successfully created {total} teaching sessions."
-    )
+    if total_created > 0:
+        modeladmin.message_user(
+            request, 
+            f"Successfully created {total_created} teaching sessions.",
+            level="success"
+        )
+    
+    if errors:
+        error_msg = "Errors occurred:\n" + "\n".join(errors)
+        modeladmin.message_user(request, error_msg, level="error")
 
 
 @admin.register(TeachingFile)
@@ -66,10 +79,20 @@ class TeachingFileAdmin(admin.ModelAdmin):
         "semester",
         "upload_date",
     )
-    search_fields = ("file_name", "lecturer__lecturer_id")
-    list_filter = ("semester", "upload_date")
+    search_fields = ("file_name", "lecturer__lecturer_id", "semester")
+    list_filter = ("semester", "upload_date", "lecturer")
     ordering = ("-upload_date",)
     actions = [parse_xlsb_files]
+    
+    # Semester is auto-filled by parser, so it's always readonly
+    readonly_fields = ("upload_date", "semester")
+    
+    def get_fields(self, request, obj=None):
+        # When adding new file (obj is None), only show lecturer and file_name
+        if obj is None:
+            return ("lecturer", "file_name")
+        # When editing existing file, show all fields including auto-filled semester
+        return ("lecturer", "file_name", "semester", "upload_date")
 
 
 # ----------------------------
@@ -126,7 +149,6 @@ class TeachingSessionAdmin(admin.ModelAdmin):
     ordering = ("-date",)
     date_hierarchy = "date"
     actions = [generate_summary_action]
-
 
 
 # ----------------------------
