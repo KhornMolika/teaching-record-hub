@@ -425,21 +425,24 @@ def teaching_records(request):
         sessions__lecturer=lecturer
     ).distinct().order_by('subject_code')
     
-    # Get all files for files tab
-    files_query = TeachingFile.objects.filter(
+    # Get all files for files tab with annotated session count
+    # FIXED: Use sessions_count for annotation, don't try to assign to property
+    files_list = TeachingFile.objects.filter(
         lecturer=lecturer
+    ).annotate(
+        sessions_count=Count('sessions')
     ).order_by('-upload_date')
     
-    # Add session count and parsed status to each file
-    files_list = []
-    for file in files_query:
-        file.session_count = file.sessions.count()
-        file.is_parsed = file.session_count > 0 or bool(file.semester)
-        files_list.append(file)
+    # Add parsed status (removed problematic session_count assignment)
+    files_with_data = []
+    for file in files_list:
+        # FIXED: Just set is_parsed, don't copy sessions_count to session_count
+        file.is_parsed = file.sessions_count > 0 or bool(file.semester)
+        files_with_data.append(file)
     
     # Calculate file statistics
-    total_files = len(files_list)
-    parsed_files = sum(1 for f in files_list if f.is_parsed)
+    total_files = len(files_with_data)
+    parsed_files = sum(1 for f in files_with_data if f.is_parsed)
     pending_files = total_files - parsed_files
     
     # Build filter params for pagination links
@@ -470,7 +473,7 @@ def teaching_records(request):
         'date_to': date_to,
         'time_from': time_from,
         'time_to': time_to,
-        'files': files_list,
+        'files': files_with_data,
         'stats': {
             'total_sessions': total_sessions,
             'total_hours': total_hours,
@@ -486,47 +489,94 @@ def teaching_records(request):
     return render(request, 'analytics/lecturer/teaching_records.html', context)
 
 
+# Replace the upload_files function in views.py with this:
+
+# Replace the upload_files function in views.py with this:
+
 @login_required
 def upload_files(request):
-    """Handle file uploads from the teaching records page"""
+    """Handle file uploads from the teaching records page with ZIP support"""
     if request.method != 'POST':
         return redirect('teaching_records')
+    
+    # Get current tab from referer or default to files
+    current_tab = request.GET.get('tab', 'files')
     
     try:
         # Get lecturer associated with current user
         lecturer = Lecturer.objects.get(user=request.user)
     except Lecturer.DoesNotExist:
         messages.error(request, "No lecturer profile found for your account.")
-        return redirect('teaching_records')
+        return redirect(f'teaching_records?tab={current_tab}')
     
     files = request.FILES.getlist('files')
     auto_parse = request.POST.get('auto_parse') == 'on'
     
     if not files:
         messages.error(request, "Please select at least one file.")
-        return redirect('teaching_records')
+        return redirect(f'teaching_records?tab={current_tab}')
     
     uploaded_files = []
     total_created = 0
     errors = []
+    empty_files_found = False
     
-    # Upload all files
+    # Process each uploaded file
     for file in files:
-        # Validate file extension
-        if not file.name.endswith('.xlsb'):
-            errors.append(f"{file.name}: Not an XLSB file")
-            continue
-        
-        try:
-            # Create TeachingFile record
-            teaching_file = TeachingFile.objects.create(
-                lecturer=lecturer,
-                file_name=file,
-                semester=""  # Will be auto-filled by parser
-            )
-            uploaded_files.append(teaching_file)
-        except Exception as e:
-            errors.append(f"{file.name}: {str(e)}")
+        # Check if it's a ZIP file
+        if file.name.lower().endswith('.zip'):
+            try:
+                import zipfile
+                from io import BytesIO
+                from django.core.files.base import ContentFile
+                
+                # Read ZIP file
+                zip_data = BytesIO(file.read())
+                with zipfile.ZipFile(zip_data, 'r') as zip_ref:
+                    # Extract all XLSB files from the ZIP
+                    xlsb_found = False
+                    for zip_info in zip_ref.namelist():
+                        if zip_info.lower().endswith('.xlsb') and not zip_info.startswith('__MACOSX'):
+                            xlsb_found = True
+                            # Extract the file
+                            xlsb_data = zip_ref.read(zip_info)
+                            xlsb_name = zip_info.split('/')[-1]  # Get filename without path
+                            
+                            # Create a file-like object
+                            xlsb_file = ContentFile(xlsb_data, name=xlsb_name)
+                            
+                            # Create TeachingFile record
+                            try:
+                                teaching_file = TeachingFile.objects.create(
+                                    lecturer=lecturer,
+                                    file_name=xlsb_file,
+                                    semester=""
+                                )
+                                uploaded_files.append(teaching_file)
+                            except Exception as e:
+                                errors.append(f"{xlsb_name} (from {file.name}): {str(e)}")
+                    
+                    if not xlsb_found:
+                        errors.append(f"{file.name}: No XLSB files found in ZIP")
+                        
+            except zipfile.BadZipFile:
+                errors.append(f"{file.name}: Invalid ZIP file")
+            except Exception as e:
+                errors.append(f"{file.name}: {str(e)}")
+                
+        # Regular XLSB file
+        elif file.name.lower().endswith('.xlsb'):
+            try:
+                teaching_file = TeachingFile.objects.create(
+                    lecturer=lecturer,
+                    file_name=file,
+                    semester=""
+                )
+                uploaded_files.append(teaching_file)
+            except Exception as e:
+                errors.append(f"{file.name}: {str(e)}")
+        else:
+            errors.append(f"{file.name}: Not an XLSB or ZIP file")
     
     # Auto-parse if requested
     if auto_parse and uploaded_files:
@@ -534,16 +584,28 @@ def upload_files(request):
             try:
                 created = parse_xlsb_and_create_sessions(teaching_file)
                 total_created += created
+                if created == 0:
+                    empty_files_found = True
             except Exception as e:
                 errors.append(f"{teaching_file.file_name.name}: {str(e)}")
     
     # Show results
     if uploaded_files:
         if auto_parse:
-            messages.success(
-                request,
-                f"Successfully uploaded {len(uploaded_files)} files and created {total_created} teaching sessions."
-            )
+            if empty_files_found:
+                messages.warning(
+                    request,
+                    f"Uploaded {len(uploaded_files)} files and created {total_created} teaching sessions. Some files contain no data."
+                )
+                if errors:
+                    error_msg = "Some errors occurred: " + "; ".join(errors)
+                    messages.warning(request, error_msg)
+                return redirect(f'/teaching-records/?check_empty=1&tab={current_tab}')
+            else:
+                messages.success(
+                    request,
+                    f"Successfully uploaded {len(uploaded_files)} files and created {total_created} teaching sessions."
+                )
         else:
             messages.success(
                 request,
@@ -554,7 +616,7 @@ def upload_files(request):
         error_msg = "Some errors occurred: " + "; ".join(errors)
         messages.warning(request, error_msg)
     
-    return redirect('teaching_records')
+    return redirect(f'/teaching-records/?tab={current_tab}')
 
 
 @login_required

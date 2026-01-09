@@ -2,6 +2,7 @@ let selectedFiles = [];
 
 document.addEventListener("alpine:init", () => {});
 
+// Tab switching functionality with URL management
 function switchTab(tab) {
   const sessionsTab = document.getElementById("sessionsTab");
   const filesTab = document.getElementById("filesTab");
@@ -15,6 +16,11 @@ function switchTab(tab) {
     filesTab.classList.remove("border-teal-600", "text-teal-600");
     sessionsContent.classList.remove("hidden");
     filesContent.classList.add("hidden");
+
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.delete("tab");
+    window.history.replaceState({}, "", url);
   } else {
     filesTab.classList.add("border-teal-600", "text-teal-600");
     filesTab.classList.remove("border-transparent", "text-gray-500");
@@ -22,6 +28,11 @@ function switchTab(tab) {
     sessionsTab.classList.remove("border-teal-600", "text-teal-600");
     filesContent.classList.remove("hidden");
     sessionsContent.classList.add("hidden");
+
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set("tab", "files");
+    window.history.replaceState({}, "", url);
   }
 }
 
@@ -37,10 +48,15 @@ function handleFileSelection(event) {
     );
 
     if (!isDuplicateInSelection) {
-      const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(
-        file.name
-      );
-      const isValidFormat = file.name.toLowerCase().endsWith(".xlsb");
+      // Check if file is valid format (XLSB or ZIP)
+      const fileName = file.name.toLowerCase();
+      const isXlsb = fileName.endsWith(".xlsb");
+      const isZip = fileName.endsWith(".zip");
+      const isValidFormat = isXlsb || isZip;
+
+      // Only check database duplicates for XLSB files, not ZIP files
+      const isDuplicateInDatabase =
+        isXlsb && DJANGO_DATA.existingFiles.includes(file.name);
 
       selectedFiles.push({
         file: file,
@@ -49,6 +65,7 @@ function handleFileSelection(event) {
         lastModified: file.lastModified,
         isDuplicate: isDuplicateInDatabase,
         isValid: isValidFormat,
+        isZip: isZip,
       });
     }
   });
@@ -86,12 +103,12 @@ function updateFileList() {
   let duplicateCount = 0;
 
   selectedFiles.forEach((fileObj, index) => {
-    const { file, name, size, isDuplicate, isValid } = fileObj;
+    const { file, name, size, isDuplicate, isValid, isZip } = fileObj;
 
     if (isValid && !isDuplicate) validCount++;
     if (isDuplicate) duplicateCount++;
 
-    let statusIcon, statusClass, borderClass, statusLabel;
+    let statusIcon, statusClass, borderClass, statusLabel, fileIcon;
 
     if (isDuplicate) {
       statusIcon = "⚠️";
@@ -112,13 +129,22 @@ function updateFileList() {
       statusLabel = "";
     }
 
+    // Different icon for ZIP files
+    if (isZip && isValid) {
+      fileIcon = "📦"; // Package emoji for ZIP
+      statusLabel =
+        '<span class="text-blue-600 text-xs font-semibold whitespace-nowrap mr-2">ZIP Archive</span>';
+    } else {
+      fileIcon = statusIcon;
+    }
+
     const sizeInMB = (size / (1024 * 1024)).toFixed(2);
     totalSize += size;
 
     html += `
       <div class="flex items-center justify-between p-3 mb-2 rounded-lg border ${borderClass} transition-all">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <span class="${statusClass} font-bold text-lg">${statusIcon}</span>
+          <span class="${statusClass} font-bold text-lg">${fileIcon}</span>
           <div class="flex-1 min-w-0">
             <div class="${
               isDuplicate
@@ -227,7 +253,8 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
     if (invalidFiles.length > 0) {
       message += `${invalidFiles.length} file(s) have invalid format.\n`;
     }
-    message += "\nPlease add new XLSB files or remove invalid/duplicate files.";
+    message +=
+      "\nPlease add new XLSB or ZIP files or remove invalid/duplicate files.";
     alert(message);
     return false;
   }
@@ -273,7 +300,10 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
   })
     .then((response) => {
       if (response.ok) {
-        window.location.reload();
+        // Reload to current tab (files tab since upload is from files tab)
+        const url = new URL(window.location);
+        url.searchParams.set("tab", "files");
+        window.location.href = url.toString();
       } else {
         throw new Error("Upload failed");
       }
@@ -386,7 +416,11 @@ async function deleteFilesSequentially(fileIds) {
           ? "1 file deleted successfully!"
           : `${successCount} files deleted successfully!`;
       alert(message);
-      window.location.reload();
+
+      // Reload to current tab (files tab)
+      const url = new URL(window.location);
+      url.searchParams.set("tab", "files");
+      window.location.href = url.toString();
     } else {
       alert("Failed to delete files. Please try again.");
       bulkDeleteBtn.disabled = false;
@@ -647,10 +681,15 @@ dropZone.addEventListener(
       );
 
       if (!isDuplicateInSelection) {
-        const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(
-          file.name
-        );
-        const isValidFormat = file.name.toLowerCase().endsWith(".xlsb");
+        // Check if file is valid format (XLSB or ZIP)
+        const fileName = file.name.toLowerCase();
+        const isXlsb = fileName.endsWith(".xlsb");
+        const isZip = fileName.endsWith(".zip");
+        const isValidFormat = isXlsb || isZip;
+
+        // Only check database duplicates for XLSB files, not ZIP files
+        const isDuplicateInDatabase =
+          isXlsb && DJANGO_DATA.existingFiles.includes(file.name);
 
         selectedFiles.push({
           file: file,
@@ -659,6 +698,7 @@ dropZone.addEventListener(
           lastModified: file.lastModified,
           isDuplicate: isDuplicateInDatabase,
           isValid: isValidFormat,
+          isZip: isZip,
         });
       }
     });
@@ -749,11 +789,22 @@ async function removeEmptyFiles() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Use the active tab from backend (passed via DJANGO_DATA)
+  // This ensures the tab state is preserved across all operations
+  if (DJANGO_DATA.activeTab === "files") {
+    switchTab("files");
+  } else {
+    switchTab("sessions");
+  }
+
+  // Initialize download links and stats
   updateDownloadLinks();
   updateStats();
 
-  // Check for empty files after page load (useful after upload with auto-parse)
-  setTimeout(() => {
-    checkForEmptyFiles();
-  }, 500);
+  // Check for empty files ONLY if triggered by parse action
+  if (DJANGO_DATA.checkEmptyFiles) {
+    setTimeout(() => {
+      checkForEmptyFiles();
+    }, 500);
+  }
 });

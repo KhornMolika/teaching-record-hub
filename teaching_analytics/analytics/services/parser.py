@@ -144,7 +144,9 @@ def extract_subject_and_semester(file_path):
 def parse_xlsb_and_create_sessions(teaching_file):
     """
     Reads XLSB file, extracts subject info and semester, and creates TeachingSession rows.
-    One row = one teaching day.
+    
+    FIXED: Now uses date + time_in + time_out for duplicate detection
+    This allows multiple sessions per day at different times.
     """
     file_path = teaching_file.file_name.path
     lecturer = teaching_file.lecturer
@@ -179,6 +181,21 @@ def parse_xlsb_and_create_sessions(teaching_file):
             print(f"\n✓ Created new subject: {subject}")
         else:
             print(f"\n✓ Using existing subject: {subject}")
+            # Update subject fields if they changed
+            update_needed = False
+            if subject.subject_name != info['subject_name']:
+                subject.subject_name = info['subject_name']
+                update_needed = True
+            if subject.degree_level != info['degree_level']:
+                subject.degree_level = info['degree_level']
+                update_needed = True
+            if subject.major != info['major']:
+                subject.major = info['major']
+                update_needed = True
+            
+            if update_needed:
+                subject.save()
+                print(f"  → Updated subject fields")
         
         # Update teaching_file with the extracted semester
         teaching_file.semester = info['semester']
@@ -203,7 +220,7 @@ def parse_xlsb_and_create_sessions(teaching_file):
     print(f"Total rows read: {len(df)}")
     print(f"Available columns: {df.shape[1]}")
 
-    # CORRECT Column mapping based on actual file structure:
+    # Column mapping based on actual file structure:
     # Column 1 = Date (Excel serial)
     # Column 2 = Time In (Excel decimal)
     # Column 3 = Time Out (Excel decimal)
@@ -263,21 +280,26 @@ def parse_xlsb_and_create_sessions(teaching_file):
     skipped = 0
 
     # STEP 3: Create teaching sessions
+    # FIXED: Uniqueness based on lecturer + subject + date + time_in + time_out
+    # This prevents duplicates when the same class is scheduled at the same time
+    # But allows multiple different classes on the same day at different times
     with transaction.atomic():
         for row in df.itertuples():
             week_number = row.date.isocalendar()[1]
             month = row.date.month
 
             try:
+                # FIXED: Now checks date + time_in + time_out for uniqueness
+                # If same date AND same times → duplicate (regardless of lecture topic)
                 obj, was_created = TeachingSession.objects.get_or_create(
                     lecturer=lecturer,
                     subject=subject,
                     date=row.date,
+                    time_in=row.time_in,      # ADDED: Must match for duplicate
+                    time_out=row.time_out,    # ADDED: Must match for duplicate
                     defaults={
                         "teaching_file": teaching_file,
                         "minutes": row.minutes,
-                        "time_in": row.time_in,
-                        "time_out": row.time_out,
                         "lecture_type": row.lecture_type,
                         "week_number": week_number,
                         "month": month,
@@ -286,18 +308,12 @@ def parse_xlsb_and_create_sessions(teaching_file):
                 
                 if was_created:
                     created += 1
-                    print(f"  Created: {row.date} | {row.lecture_type} | {row.time_in} - {row.time_out} | {row.minutes} mins")
+                    print(f"  ✓ Created: {row.date} | {row.lecture_type} | {row.time_in}-{row.time_out} | {row.minutes} mins")
                 else:
                     # Update existing session if data changed
                     changed = False
                     if obj.minutes != row.minutes:
                         obj.minutes = row.minutes
-                        changed = True
-                    if obj.time_in != row.time_in:
-                        obj.time_in = row.time_in
-                        changed = True
-                    if obj.time_out != row.time_out:
-                        obj.time_out = row.time_out
                         changed = True
                     if obj.lecture_type != row.lecture_type:
                         obj.lecture_type = row.lecture_type
@@ -306,22 +322,30 @@ def parse_xlsb_and_create_sessions(teaching_file):
                     if changed:
                         obj.week_number = week_number
                         obj.month = month
+                        obj.teaching_file = teaching_file
                         obj.save()
                         updated += 1
-                        print(f"  Updated: {row.date} | {row.lecture_type} | {row.time_in} - {row.time_out} | {row.minutes} mins")
+                        print(f"  ↻ Updated: {row.date} | {row.lecture_type} | {row.time_in}-{row.time_out} | {row.minutes} mins")
                     else:
                         skipped += 1
+                        print(f"  → Skipped: {row.date} | {row.lecture_type} | {row.time_in}-{row.time_out} (duplicate - same time slot)")
                         
             except Exception as e:
-                print(f"Error creating session for {row.date}: {e}")
+                print(f"✗ Error creating session for {row.date}: {e}")
+                import traceback
+                traceback.print_exc()
                 raise
+
+    # Mark file as parsed
+    teaching_file.is_parsed = True
+    teaching_file.save()
 
     print(f"\n" + "="*80)
     print(f"PARSING COMPLETE")
     print(f"="*80)
     print(f"✓ Created: {created} new sessions")
     if updated > 0:
-        print(f"✓ Updated: {updated} existing sessions")
+        print(f"↻ Updated: {updated} existing sessions")
     if skipped > 0:
         print(f"→ Skipped: {skipped} unchanged sessions")
     print("="*80 + "\n")

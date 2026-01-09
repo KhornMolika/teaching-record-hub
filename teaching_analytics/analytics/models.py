@@ -45,15 +45,23 @@ class TeachingFile(models.Model):
         null=True,
         help_text="Auto-filled from XLSB file when parsed"
     )
+    
+    # Track parsing status
+    is_parsed = models.BooleanField(default=False)
 
     def __str__(self):
         if self.semester:
             return f"{self.file_name.name} ({self.semester})"
         return f"{self.file_name.name}"
+    
+    @property
+    def session_count(self):
+        """Return the number of sessions created from this file"""
+        return self.sessions.count()
 
 
-# One row = one teaching day
-# Prevents duplicate sessions
+# One row = one teaching day/session
+# UPDATED: Prevents duplicate sessions based on date + time slot
 # Ready for analytics & prediction
 class TeachingSession(models.Model):
     lecturer = models.ForeignKey(
@@ -71,7 +79,7 @@ class TeachingSession(models.Model):
     time_out = models.TimeField(blank=True, null=True)
     minutes = models.PositiveIntegerField()
     
-    # NEW FIELD: Lecture type (e.g., "Introduction", "Topology", "Lab", "Tutorial")
+    # Lecture type (e.g., "Introduction", "Topology", "Lab", "Tutorial")
     lecture_type = models.CharField(
         max_length=200, 
         blank=True, 
@@ -93,10 +101,39 @@ class TeachingSession(models.Model):
                 raise ValidationError("time_out must be after time_in.")
 
     class Meta:
-        unique_together = ("lecturer", "subject", "date")
+        # FIXED: Unique constraint now includes time_in and time_out
+        # This allows multiple sessions on same day at different times
+        # But prevents duplicates in the same time slot
+        constraints = [
+            models.UniqueConstraint(
+                fields=['lecturer', 'subject', 'date', 'time_in', 'time_out'],
+                name='unique_session_timeslot'
+            )
+        ]
+        
+        # Add indexes for faster queries
+        indexes = [
+            models.Index(fields=['lecturer', 'date']),
+            models.Index(fields=['subject', 'date']),
+            models.Index(fields=['date', 'time_in']),
+        ]
 
     def __str__(self):
-        return f"{self.date} - {self.minutes} mins"
+        if self.lecture_type:
+            return f"{self.date} - {self.lecture_type} - {self.duration}"
+        return f"{self.date} - {self.duration}"
+    
+    @property
+    def duration(self):
+        """Return formatted duration as 'Xh Ym'"""
+        hours = self.minutes // 60
+        mins = self.minutes % 60
+        return f"{hours}h {mins}m"
+    
+    @property
+    def duration_minutes(self):
+        """Return total minutes for calculations"""
+        return self.minutes
 
 
 # Phase‑1 manual reports

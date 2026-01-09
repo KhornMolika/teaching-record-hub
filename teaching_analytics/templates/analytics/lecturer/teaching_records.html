@@ -177,19 +177,34 @@
                       {% endif %}
                     </td>
                     <td class="py-4 px-4 text-sm font-semibold text-right">
-                      <span class="session-count-{{ file.id }} {% if file.session_count == 0 %}text-red-600{% else %}text-gray-900{% endif %}">
-                        {{ file.session_count }}
+                      <span class="session-count-{{ file.id }} {% if file.sessions_count == 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                        {{ file.sessions_count }}
                       </span>
                     </td>
-                    <td class="py-4 px-4 text-center">
-                      <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
-                        {% csrf_token %}
-                        <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </form>
+                    <td class="py-4 px-4">
+                      <div class="flex items-center justify-center gap-2">
+                        <!-- Parse Button - Only show if not parsed -->
+                        {% if not file.is_parsed %}
+                        <form method="post" action="{% url 'parse_file' file.id %}" class="inline parse-file-form-{{ file.id }}">
+                          {% csrf_token %}
+                          <button type="submit" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Parse File">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </form>
+                        {% endif %}
+                        
+                        <!-- Delete Button -->
+                        <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
+                          {% csrf_token %}
+                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                   {% endfor %}
@@ -335,7 +350,7 @@
       
       <div class="mb-6">
         <label class="block text-sm font-medium text-gray-700 mb-2">
-          Select XLSB Files <span class="text-red-500">*</span>
+          Select XLSB Files or ZIP Archive <span class="text-red-500">*</span>
         </label>
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-teal-500 transition cursor-pointer"
              onclick="document.getElementById('bulkFileInput').click()"
@@ -345,15 +360,16 @@
             id="bulkFileInput" 
             name="files" 
             multiple 
-            accept=".xlsb" 
+            accept=".xlsb,.zip" 
             class="hidden" 
             onchange="handleFileSelection(event)"
           >
           <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <p class="text-gray-600 mb-2">Click to browse or drag and drop multiple XLSB files</p>
-          <p class="text-sm text-gray-500">You can add files one by one or all at once</p>
+          <p class="text-gray-600 mb-2">Click to browse or drag and drop</p>
+          <p class="text-sm text-gray-500">Upload XLSB files individually or in a ZIP archive</p>
+          <p class="text-xs text-gray-400 mt-2">✨ ZIP files will be automatically extracted</p>
         </div>
       </div>
 
@@ -401,7 +417,7 @@
   </div>
 </div>
 
-<!-- No Data Found Modal -->
+<!-- No Data Found Modal (only shown when parsing returns 0 sessions) -->
 <div id="noDataModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
     <div class="flex items-start gap-4 mb-6">
@@ -414,7 +430,7 @@
       </div>
       <div class="flex-1">
         <h2 class="text-xl font-bold text-gray-900 mb-2">⚠️ No Data Found</h2>
-        <p class="text-gray-600 mb-4">The following file(s) were uploaded but contain no teaching session data:</p>
+        <p class="text-gray-600 mb-4">The following file(s) were parsed but contain no teaching session data:</p>
         <div id="noDataFileList" class="bg-gray-50 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
           <!-- File list will be populated by JavaScript -->
         </div>
@@ -438,6 +454,7 @@
     </div>
   </div>
 </div>
+
 
 <script src="{% static 'js/teaching_records.js' %}" defer></script>
 <script>
@@ -463,12 +480,28 @@ const DJANGO_DATA = {
     {% for file in files %}
     "{{ file.file_name.name|escapejs }}"{% if not forloop.last %},{% endif %}
     {% endfor %}
-  ]
+  ],
+  // Only check for empty files if coming from parse action
+  checkEmptyFiles: {{ check_empty_files|default:"false"|lower }},
+  // Active tab from backend
+  activeTab: "{{ active_tab|default:'sessions' }}"
 };
 
-// Check for files with 0 sessions on page load (after upload/parse)
+// Check for files with 0 sessions ONLY after parsing (not on regular page load)
 document.addEventListener('DOMContentLoaded', function() {
-  checkForEmptyFiles();
+  // Switch to the correct tab based on backend state
+  if (DJANGO_DATA.activeTab === 'files') {
+    switchTab('files');
+  } else {
+    switchTab('sessions');
+  }
+  
+  // Check for empty files only if triggered by parse
+  if (DJANGO_DATA.checkEmptyFiles) {
+    setTimeout(() => {
+      checkForEmptyFiles();
+    }, 500);
+  }
 });
 
 </script>
