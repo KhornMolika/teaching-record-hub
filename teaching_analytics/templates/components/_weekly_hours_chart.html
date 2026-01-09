@@ -1,0 +1,11 @@
+<!-- Weekly Hours Chart -->
+<div class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+  <h2 class="text-xl font-bold text-gray-900 mb-6">My Weekly Hours</h2>
+  {% if weekly_hours_chart_data %}
+    <div class="h-64">
+      <canvas id="weeklyHoursChart"></canvas>
+    </div>
+  {% else %}
+    <div class="text-center text-gray-500 py-12">No weekly data to display yet.</div>
+  {% endif %}
+</div>

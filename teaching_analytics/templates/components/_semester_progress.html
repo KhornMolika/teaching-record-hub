@@ -1,0 +1,19 @@
+<!-- Semester Progress -->
+<div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">Semester Progress</h2>
+      <p class="text-sm text-gray-500">Progress toward {{ target_hours }}h target</p>
+    </div>
+    <div class="text-2xl font-bold text-indigo-600">{{ semester_progress|default:"0"|floatformat:0 }}%</div>
+  </div>
+  <div class="relative">
+    <div class="w-full bg-gray-200 rounded-full h-3">
+      <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full" style="width: {{ semester_progress|default:0 }}%"></div>
+    </div>
+    <div class="flex justify-between mt-2 text-xs text-gray-500">
+      <span>{{ total_hours_completed|default:"0" }}h completed</span>
+      <span>{{ remaining_hours|default:"0"|floatformat:1 }}h remaining</span>
+    </div>
+  </div>
+</div>

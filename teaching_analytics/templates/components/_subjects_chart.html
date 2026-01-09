@@ -1,0 +1,11 @@
+<!-- Subjects Chart -->
+<div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+  <h2 class="text-xl font-bold text-gray-900 mb-6">My Subjects</h2>
+  {% if subjects_by_hours %}
+    <div class="h-64">
+      <canvas id="subjectsChart"></canvas>
+    </div>
+  {% else %}
+    <div class="text-center text-gray-500 py-12">No subject data available.</div>
+  {% endif %}
+</div>

@@ -59,359 +59,123 @@
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <div class="text-sm text-gray-500 mb-1">Total Hours</div>
-            <div class="text-3xl font-bold text-indigo-600">131h</div>
-            <div class="text-xs text-gray-400 mt-1">of 180h target</div>
-          </div>
-          <div
-            class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <div class="text-sm text-gray-500 mb-1">Sessions</div>
-            <div class="text-3xl font-bold text-teal-600">36</div>
-            <div class="text-xs text-gray-400 mt-1">This semester</div>
-          </div>
-          <div
-            class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-teal-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <div class="text-sm text-gray-500 mb-1">Predicted Total</div>
-            <div class="text-3xl font-bold text-green-600">239h</div>
-            <div class="text-xs text-gray-400 mt-1">6 weeks left</div>
-          </div>
-          <div
-            class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <div class="text-sm text-gray-500 mb-1">Avg Weekly</div>
-            <div class="text-3xl font-bold text-amber-600">16.4h</div>
-            <div class="text-xs text-gray-400 mt-1">Per week</div>
-          </div>
-          <div
-            class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-amber-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Semester Progress -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900">Semester Progress</h2>
-          <p class="text-sm text-gray-500">Progress toward 180h target</p>
-        </div>
-        <div class="text-2xl font-bold text-indigo-600">73%</div>
-      </div>
-      <div class="relative">
-        <div class="w-full bg-gray-200 rounded-full h-3">
-          <div
-            class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full"
-            style="width: 73%"
-          ></div>
-        </div>
-        <div class="flex justify-between mt-2 text-xs text-gray-500">
-          <span>131h completed</span>
-          <span>49h remaining</span>
-        </div>
-      </div>
-    </div>
+    {% include "components/_stats_cards.html" %}
+    {% include "components/_semester_progress.html" %}
 
     <!-- Charts Row -->
     <div class="grid grid-cols-3 gap-6 mb-8">
-      <div
-        class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-      >
-        <h2 class="text-xl font-bold text-gray-900 mb-6">My Weekly Hours</h2>
-        <div class="h-64 flex items-end justify-between gap-2">
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 60%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 1</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 65%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 2</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 58%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 3</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 75%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 4</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 70%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 5</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 85%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 6</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 78%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 7</span>
-          </div>
-          <div class="flex-1 flex flex-col items-center">
-            <div
-              class="w-full bg-gradient-to-t from-teal-400 to-teal-300 rounded-t-lg"
-              style="height: 82%"
-            ></div>
-            <span class="text-xs text-gray-500 mt-2">Week 8</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">My Subjects</h2>
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 bg-indigo-500 rounded-full"></div>
-              <div>
-                <div class="font-semibold text-gray-900">Data Structures</div>
-                <div class="text-xs text-gray-500">15 sessions</div>
-              </div>
-            </div>
-            <div class="font-bold text-gray-900">45h</div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 bg-teal-500 rounded-full"></div>
-              <div>
-                <div class="font-semibold text-gray-900">Algorithms</div>
-                <div class="text-xs text-gray-500">12 sessions</div>
-              </div>
-            </div>
-            <div class="font-bold text-gray-900">38h</div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <div>
-                <div class="font-semibold text-gray-900">Database Systems</div>
-                <div class="text-xs text-gray-500">9 sessions</div>
-              </div>
-            </div>
-            <div class="font-bold text-gray-900">28h</div>
-          </div>
-        </div>
-      </div>
+      {% include "components/_weekly_hours_chart.html" %}
+      {% include "components/_subjects_chart.html" %}
     </div>
 
-    <!-- Upcoming Sessions -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <h2 class="text-xl font-bold text-gray-900 mb-6">Upcoming Sessions</h2>
-      <div class="space-y-4">
-        <div
-          class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-        >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-900">Data Structures</div>
-              <div class="text-sm text-gray-500">Lab 201</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <div class="text-sm font-medium text-gray-900">09:00 - 11:00</div>
-            </div>
-            <span
-              class="px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full"
-              >Today</span
-            >
-          </div>
-        </div>
-
-        <div
-          class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-        >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-teal-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-900">Algorithms</div>
-              <div class="text-sm text-gray-500">Room 105</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <div class="text-sm font-medium text-gray-900">14:00 - 16:00</div>
-            </div>
-            <span
-              class="px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full"
-              >Today</span
-            >
-          </div>
-        </div>
-
-        <div
-          class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-        >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-amber-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-900">Database Systems</div>
-              <div class="text-sm text-gray-500">Lab 203</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <div class="text-sm font-medium text-gray-900">10:00 - 12:00</div>
-            </div>
-            <span
-              class="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded-full"
-              >Tomorrow</span
-            >
-          </div>
-        </div>
-      </div>
-    </div>
+    {% include "components/_upcoming_sessions.html" %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Weekly Hours Chart
+  const weeklyHoursCtx = document.getElementById('weeklyHoursChart');
+  if (weeklyHoursCtx) {
+    const weekLabels = [{% for week in weekly_hours_chart_data %}'Week {{ week.week_number }}',{% endfor %}];
+    const weekHours = [{% for week in weekly_hours_chart_data %}{{ week.total_hours }},{% endfor %}];
+
+    new Chart(weeklyHoursCtx, {
+      type: 'bar',
+      data: {
+        labels: weekLabels,
+        datasets: [{
+          label: 'Weekly Hours',
+          data: weekHours,
+          backgroundColor: '#38b2ac', // teal-500
+          borderColor: '#38b2ac',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Hours'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Subjects Chart
+  const subjectsCtx = document.getElementById('subjectsChart');
+  if (subjectsCtx) {
+    const subjectNames = [{% for subject in subjects_by_hours %}'{{ subject.subject__subject_name }}',{% endfor %}];
+    const subjectHours = [{% for subject in subjects_by_hours %}{{ subject.total_hours }},{% endfor %}];
+
+    new Chart(subjectsCtx, {
+      type: 'doughnut',
+      data: {
+        labels: subjectNames,
+        datasets: [{
+          data: subjectHours,
+          backgroundColor: [
+            '#4c51bf', // indigo-700
+            '#38b2ac', // teal-500
+            '#ed8936', // orange-500
+            '#a0aec0', // gray-500
+            '#667eea', // indigo-400
+            '#4fd1c5', // teal-400
+            '#f6ad55', // orange-400
+          ],
+          hoverBackgroundColor: [
+            '#667eea',
+            '#4fd1c5',
+            '#f6ad55',
+            '#cbd5e0',
+            '#8da4ef',
+            '#68d391',
+            '#fbd38d',
+          ],
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              usePointStyle: true,
+              boxWidth: 8,
+              padding: 10,
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += context.parsed + ' hours';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        cutout: '70%',
+      }
+    });
+  }
+</script>
 {% endblock %}

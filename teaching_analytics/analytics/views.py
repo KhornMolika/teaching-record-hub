@@ -136,10 +136,90 @@ def lecturers(request):
     return render(request, 'analytics/admin/lecturers.html')
 
 
-# Home page for lecturers
 @lecturer_required
 def home(request):
-    return render(request, 'analytics/lecturer/home.html')
+    """
+    Display an overview of the lecturer's teaching workload, including completed
+    sessions, semester progress, and upcoming sessions.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
+
+    # Get all sessions for the lecturer
+    all_sessions = TeachingSession.objects.filter(lecturer=lecturer).order_by("date")
+
+    # --- Key Statistics ---
+    total_minutes_completed = 0
+    for session in all_sessions:
+        if session.time_in and session.time_out:
+            duration = datetime.combine(session.date, session.time_out) - datetime.combine(session.date, session.time_in)
+            total_minutes_completed += duration.total_seconds() / 60
+        else:
+            total_minutes_completed += session.minutes
+
+    total_hours_completed = round(total_minutes_completed / 60, 1)
+    total_sessions_completed = all_sessions.count()
+
+    # --- Semester & Weekly Calculations ---
+    SEMESTER_WEEKS = 14  # Standard semester length
+    weeks_with_sessions = all_sessions.values("week_number").distinct().count()
+    
+    # Avoid division by zero
+    average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
+    
+    # Simple prediction: average weekly hours * total semester weeks
+    predicted_total_hours = round(average_weekly_hours * SEMESTER_WEEKS, 1)
+    
+    # --- Progress Calculation ---
+    TARGET_HOURS = 180  # Semester target
+    semester_progress = min(round((total_hours_completed / TARGET_HOURS) * 100, 2), 100) if TARGET_HOURS > 0 else 0
+
+    # --- Chart Data: Weekly Hours ---
+    weekly_hours_chart_data = (
+        all_sessions.values("week_number")
+        .annotate(total_minutes=Sum("minutes"))
+        .order_by("week_number")
+    )
+    
+    max_weekly_hours = 0
+    for week in weekly_hours_chart_data:
+        week["total_hours"] = round(week["total_minutes"] / 60, 1)
+        if week["total_hours"] > max_weekly_hours:
+            max_weekly_hours = week["total_hours"]
+
+    # --- Subject Breakdown ---
+    subjects_by_hours = (
+        all_sessions.values("subject__subject_name")
+        .annotate(total_minutes=Sum("minutes"))
+        .order_by("-total_minutes")
+    )
+    
+    for subject in subjects_by_hours:
+        subject["total_hours"] = int(subject["total_minutes"] / 60)
+
+    # --- Upcoming Sessions ---
+    today = datetime.now().date()
+    upcoming_sessions = all_sessions.filter(date__gte=today).order_by("date", "time_in")[:3]
+
+    context = {
+        "total_hours_completed": total_hours_completed,
+        "total_sessions_completed": total_sessions_completed,
+        "predicted_total_hours": predicted_total_hours,
+        "average_weekly_hours": average_weekly_hours,
+        "semester_progress": semester_progress,
+        "target_hours": TARGET_HOURS,
+        "remaining_hours": max(0, TARGET_HOURS - total_hours_completed),
+        "weekly_hours_chart_data": weekly_hours_chart_data,
+        "max_weekly_hours": max_weekly_hours,
+        "subjects_by_hours": subjects_by_hours,
+        "upcoming_sessions": upcoming_sessions,
+        "today": today
+    }
+
+    return render(request, "analytics/lecturer/home.html", context)
 
 
 @lecturer_required
