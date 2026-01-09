@@ -286,6 +286,122 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
     });
 });
 
+// Bulk file selection and deletion functions
+function toggleSelectAllFiles(checkbox) {
+  const checkboxes = document.querySelectorAll(".file-checkbox");
+  checkboxes.forEach((cb) => {
+    cb.checked = checkbox.checked;
+  });
+  updateSelectedFilesCount();
+}
+
+function updateSelectedFilesCount() {
+  const checkboxes = document.querySelectorAll(".file-checkbox:checked");
+  const count = checkboxes.length;
+  const selectedFilesCount = document.getElementById("selectedFilesCount");
+  const selectedFilesNumber = document.getElementById("selectedFilesNumber");
+  const bulkDeleteFilesBtn = document.getElementById("bulkDeleteFilesBtn");
+  const selectAllFiles = document.getElementById("selectAllFiles");
+
+  selectedFilesNumber.textContent = count;
+
+  if (count > 0) {
+    selectedFilesCount.style.display = "inline";
+    bulkDeleteFilesBtn.style.display = "flex";
+  } else {
+    selectedFilesCount.style.display = "none";
+    bulkDeleteFilesBtn.style.display = "none";
+  }
+
+  const allCheckboxes = document.querySelectorAll(".file-checkbox");
+  selectAllFiles.checked =
+    allCheckboxes.length > 0 && count === allCheckboxes.length;
+  selectAllFiles.indeterminate = count > 0 && count < allCheckboxes.length;
+}
+
+function bulkDeleteFiles() {
+  const checkboxes = document.querySelectorAll(".file-checkbox:checked");
+  const fileIds = Array.from(checkboxes).map((cb) => cb.value);
+
+  if (fileIds.length === 0) {
+    alert("Please select files to delete");
+    return;
+  }
+
+  const confirmMessage =
+    fileIds.length === 1
+      ? "Are you sure you want to delete this file and all its sessions?"
+      : `Are you sure you want to delete ${fileIds.length} files and all their sessions?`;
+
+  if (confirm(confirmMessage)) {
+    // Delete files sequentially
+    deleteFilesSequentially(fileIds);
+  }
+}
+
+async function deleteFilesSequentially(fileIds) {
+  const bulkDeleteBtn = document.getElementById("bulkDeleteFilesBtn");
+  const originalHTML = bulkDeleteBtn.innerHTML;
+
+  bulkDeleteBtn.disabled = true;
+  bulkDeleteBtn.innerHTML = `
+    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    Deleting...
+  `;
+  bulkDeleteBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+  try {
+    let successCount = 0;
+
+    for (const fileId of fileIds) {
+      const deleteForm = document.querySelector(`.delete-file-form-${fileId}`);
+      if (deleteForm) {
+        const formData = new FormData(deleteForm);
+
+        try {
+          const response = await fetch(deleteForm.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            successCount++;
+            // Fade out the row
+            const row = document.querySelector(`[data-file-id="${fileId}"]`);
+            if (row) {
+              row.style.opacity = "0.3";
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to delete file ${fileId}:`, error);
+        }
+      }
+    }
+
+    if (successCount > 0) {
+      const message =
+        successCount === 1
+          ? "1 file deleted successfully!"
+          : `${successCount} files deleted successfully!`;
+      alert(message);
+      window.location.reload();
+    } else {
+      alert("Failed to delete files. Please try again.");
+      bulkDeleteBtn.disabled = false;
+      bulkDeleteBtn.innerHTML = originalHTML;
+      bulkDeleteBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    }
+  } catch (error) {
+    console.error("Error deleting files:", error);
+    alert("An error occurred while deleting files.");
+    bulkDeleteBtn.disabled = false;
+    bulkDeleteBtn.innerHTML = originalHTML;
+    bulkDeleteBtn.classList.remove("opacity-50", "cursor-not-allowed");
+  }
+}
+
 function toggleSelectAll(checkbox) {
   const checkboxes = document.querySelectorAll(".session-checkbox");
   checkboxes.forEach((cb) => {
@@ -616,49 +732,20 @@ function keepEmptyFiles() {
 }
 
 // Remove the empty files
-function removeEmptyFiles() {
+async function removeEmptyFiles() {
   if (emptyFiles.length === 0) {
     keepEmptyFiles();
     return;
   }
 
-  // Create a form to delete multiple files
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.style.display = "none";
+  const fileIds = emptyFiles.map((f) => f.id);
 
-  // Add CSRF token
-  const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
-  if (csrfToken) {
-    const csrfInput = document.createElement("input");
-    csrfInput.type = "hidden";
-    csrfInput.name = "csrfmiddlewaretoken";
-    csrfInput.value = csrfToken.value;
-    form.appendChild(csrfInput);
-  }
-
-  // Delete files one by one
-  let deletedCount = 0;
-  const totalFiles = emptyFiles.length;
-
-  emptyFiles.forEach((file, index) => {
-    const deleteForm = document.querySelector(`.delete-file-form-${file.id}`);
-    if (deleteForm) {
-      // Trigger the form submission
-      setTimeout(() => {
-        deleteForm.submit();
-      }, index * 100); // Stagger submissions slightly
-    }
-  });
-
-  // Close modal
+  // Close modal first
   const modal = document.getElementById("noDataModal");
   modal.classList.add("hidden");
 
-  // Show a loading indicator
-  setTimeout(() => {
-    window.location.reload();
-  }, totalFiles * 150);
+  // Use the bulk delete function
+  await deleteFilesSequentially(fileIds);
 }
 
 document.addEventListener("DOMContentLoaded", function () {

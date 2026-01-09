@@ -99,12 +99,36 @@
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gray-200">
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">File Name</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                    <div class="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="selectAllFiles" 
+                        onchange="toggleSelectAllFiles(this)"
+                        class="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                      >
+                      <span>File Name</span>
+                      <span id="selectedFilesCount" class="text-xs text-teal-600 font-semibold" style="display: none;">
+                        (<span id="selectedFilesNumber">0</span> selected)
+                      </span>
+                    </div>
+                  </th>
                   <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Semester</th>
                   <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Upload Date</th>
                   <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
                   <th class="text-right py-3 px-4 text-sm font-semibold text-gray-600">Sessions</th>
-                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">
+                    <button
+                      id="bulkDeleteFilesBtn"
+                      onclick="bulkDeleteFiles()"
+                      style="display: none;"
+                      class="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Selected
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -112,7 +136,13 @@
                   {% for file in files %}
                   <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-file-id="{{ file.id }}">
                     <td class="py-4 px-4">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-3">
+                        <input 
+                          type="checkbox" 
+                          class="file-checkbox w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                          value="{{ file.id }}"
+                          onchange="updateSelectedFilesCount()"
+                        >
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -152,26 +182,14 @@
                       </span>
                     </td>
                     <td class="py-4 px-4 text-center">
-                      <div class="flex items-center justify-center gap-2">
-                        {% if not file.is_parsed %}
-                        <form method="post" action="{% url 'parse_file' file.id %}" class="inline">
-                          {% csrf_token %}
-                          <button type="submit" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Parse Now">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                          </button>
-                        </form>
-                        {% endif %}
-                        <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
-                          {% csrf_token %}
-                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </form>
-                      </div>
+                      <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
+                        {% csrf_token %}
+                        <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </form>
                     </td>
                   </tr>
                   {% endfor %}
