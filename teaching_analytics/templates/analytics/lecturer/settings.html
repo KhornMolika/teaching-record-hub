@@ -1,0 +1,104 @@
+{% extends "../base.html" %}
+{% load custom_filters %}
+{% block title %}Lecturer Settings{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen bg-gray-50">
+  <!-- Include Sidebar -->
+  {% include "components/sidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="flex-1 ml-64 py-8 px-20">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+
+    <form method="post">
+      {% csrf_token %} {# Django security feature #}
+
+      <!-- General User Settings -->
+      <section class="mb-10 p-6 bg-white rounded-lg shadow">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">General Settings</h2>
+
+        <div class="mb-4">
+          <label for="id_theme" class="block text-gray-700 text-sm font-bold mb-2">Theme:</label>
+          <select id="id_theme" name="theme" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Light</option>
+            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Dark</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="id_date_format" class="block text-700 text-sm font-bold mb-2">Date Format:</label>
+          <input type="text" id="id_date_format" name="date_format" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., YYYY-MM-DD" value="{{ settings.date_format }}">
+        </div>
+
+        <div class="mb-4">
+            <label for="id_notifications" class="block text-gray-700 text-sm font-bold mb-2">Enable Email Notifications:</label>
+            <input type="checkbox" id="id_notifications" name="enable_notifications" class="mr-2 leading-tight" {% if settings.enable_notifications %}checked{% endif %}>
+            <span class="text-sm text-gray-600">Receive important updates via email.</span>
+        </div>
+
+      </section>
+
+      <!-- Teaching Records Specific Settings -->
+      <section class="mb-10 p-6 bg-white rounded-lg shadow">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Teaching Records Settings</h2>
+
+        <div class="mb-4">
+          <label for="id_records_per_page" class="block text-gray-700 text-sm font-bold mb-2">Records per page:</label>
+          <input type="number" id="id_records_per_page" name="records_per_page" min="5" max="100" value="{{ settings.records_per_page }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Default columns to display:</label>
+          <div class="flex flex-wrap gap-4">
+              {% with selected_columns_list=settings.default_columns|split:"," %}
+              {% for column in available_record_columns %}
+              <label class="inline-flex items-center">
+                  <input type="checkbox" name="default_columns" value="{{ column }}" class="form-checkbox" {% if column in selected_columns_list %}checked{% endif %}>
+                  <span class="ml-2 text-gray-700">{{ column|capfirst }}</span>
+              </label>
+              {% endfor %}
+              {% endwith %}
+              {# Add more columns as needed #}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="id_default_sort_order" class="block text-gray-700 text-sm font-bold mb-2">Default Sort Order:</label>
+          <select id="id_default_sort_order" name="default_sort_order" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <option value="-date" {% if settings.default_sort_order == '-date' %}selected{% endif %}>Date (Newest first)</option>
+            <option value="date" {% if settings.default_sort_order == 'date' %}selected{% endif %}>Date (Oldest first)</option>
+            <option value="subject__subject_name" {% if settings.default_sort_order == 'subject__subject_name' %}selected{% endif %}>Subject (A-Z)</option>
+            {# Add more sort options as needed #}
+          </select>
+        </div>
+      </section>
+
+      <!-- Workload Specific Settings -->
+      <section class="mb-10 p-6 bg-white rounded-lg shadow">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Workload Settings</h2>
+
+        <div class="mb-4">
+          <label for="id_workload_display" class="block text-gray-700 text-sm font-bold mb-2">Workload Display:</label>
+          <select id="id_workload_display" name="workload_display" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <option value="weekly" {% if settings.workload_display == 'weekly' %}selected{% endif %}>Weekly Hours</option>
+            <option value="monthly" {% if settings.workload_display == 'monthly' %}selected{% endif %}>Monthly Hours</option>
+            <option value="semester" {% if settings.workload_display == 'semester' %}selected{% endif %}>Per Semester</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="id_workload_target" class="block text-gray-700 text-sm font-bold mb-2">Weekly Workload Target (hours):</label>
+          <input type="number" id="id_workload_target" name="workload_target" min="0" value="{{ settings.workload_target }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+      </section>
+
+      <div class="flex items-center justify-start">
+        <button type="submit" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

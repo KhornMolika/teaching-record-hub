@@ -13,6 +13,7 @@ urlpatterns = [
     # Lecturer URLs
     path('', views.home, name='home'),
     path('workload/', views.workload, name='workload'),
+    path('settings/', views.settings_view, name='settings'),
     path('upload-files/', views.upload_files, name='upload_files'),
     
     # Teaching Records URLs

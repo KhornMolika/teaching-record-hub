@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
   <div class="p-6">
     <!-- Table Header with Actions -->
@@ -134,13 +135,23 @@
                   class="w-4 h-4 text-teal-600 rounded cursor-pointer"
                 />
               </th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Subject</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Lecture</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Time In</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Time Out</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Duration</th>
-              <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Source File</th>
+              {% comment %} Dynamic Headers {% endcomment %}
+              {% with default_columns_list=settings.default_columns|split:"," %}
+              {% for column_name in available_table_columns %}
+                {% if column_name in default_columns_list %}
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                    {% if column_name == 'date' %}Date
+                    {% elif column_name == 'subject' %}Subject
+                    {% elif column_name == 'lecture_type' %}Lecture
+                    {% elif column_name == 'time_in' %}Time In
+                    {% elif column_name == 'time_out' %}Time Out
+                    {% elif column_name == 'duration' %}Duration
+                    {% elif column_name == 'source_file' %}Source File
+                    {% endif %}
+                  </th>
+                {% endif %}
+              {% endfor %}
+              {% endwith %}
               <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
             </tr>
           </thead>
@@ -158,55 +169,70 @@
                     class="session-checkbox w-4 h-4 text-teal-600 rounded cursor-pointer"
                   />
                 </td>
-                <td class="py-4 px-4 text-sm text-gray-700">{{ session.date|date:"Y-m-d" }}</td>
-                <td class="py-4 px-4">
-                  <div class="text-sm font-medium text-gray-900">{{ session.subject.subject_code }}</div>
-                  <div class="text-xs text-gray-500">{{ session.subject.subject_name }}</div>
-                </td>
-                <td class="py-4 px-4">
-                  {% if session.lecture_type %}
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {{ session.lecture_type }}
-                    </span>
-                  {% else %}
-                    <span class="text-gray-400 text-sm">-</span>
+                {% comment %} Dynamic Data Cells {% endcomment %}
+                {% with default_columns_list=settings.default_columns|split:"," %}
+                {% for column_name in available_table_columns %}
+                  {% if column_name in default_columns_list %}
+                    {% if column_name == 'date' %}
+                    <td class="py-4 px-4 text-sm text-gray-700">{{ session.date|date:"Y-m-d" }}</td>
+                    {% elif column_name == 'subject' %}
+                    <td class="py-4 px-4">
+                      <div class="text-sm font-medium text-gray-900">{{ session.subject.subject_code }}</div>
+                      <div class="text-xs text-gray-500">{{ session.subject.subject_name }}</div>
+                    </td>
+                    {% elif column_name == 'lecture_type' %}
+                    <td class="py-4 px-4">
+                      {% if session.lecture_type %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {{ session.lecture_type }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400 text-sm">-</span>
+                      {% endif %}
+                    </td>
+                    {% elif column_name == 'time_in' %}
+                    <td class="py-4 px-4 text-sm text-gray-700">
+                      {% if session.time_in %}
+                        <span class="inline-flex items-center gap-1">
+                          <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {{ session.time_in|time:"H:i" }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400">-</span>
+                      {% endif %}
+                    </td>
+                    {% elif column_name == 'time_out' %}
+                    <td class="py-4 px-4 text-sm text-gray-700">
+                      {% if session.time_out %}
+                        <span class="inline-flex items-center gap-1">
+                          <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {{ session.time_out|time:"H:i" }}
+                        </span>
+                      {% else %}
+                        <span class="text-gray-400">-</span>
+                      {% endif %}
+                    </td>
+                    {% elif column_name == 'duration' %}
+                    <td class="py-4 px-4">
+                      <div class="text-sm font-semibold text-indigo-600">
+                        {{ session.hours }}h {{ session.minutes_part }}m
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ session.actual_minutes }} mins total
+                      </div>
+                    </td>
+                    {% elif column_name == 'source_file' %}
+                    <td class="py-4 px-4 text-xs text-gray-500">
+                      {{ session.teaching_file.file_name.name|truncatechars:30 }}
+                    </td>
+                    {% endif %}
                   {% endif %}
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">
-                  {% if session.time_in %}
-                    <span class="inline-flex items-center gap-1">
-                      <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {{ session.time_in|time:"H:i" }}
-                    </span>
-                  {% else %}
-                    <span class="text-gray-400">-</span>
-                  {% endif %}
-                </td>
-                <td class="py-4 px-4 text-sm text-gray-700">
-                  {% if session.time_out %}
-                    <span class="inline-flex items-center gap-1">
-                      <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {{ session.time_out|time:"H:i" }}
-                    </span>
-                  {% else %}
-                    <span class="text-gray-400">-</span>
-                  {% endif %}
-                </td>
-                <td class="py-4 px-4">
-                  <div class="text-sm font-semibold text-indigo-600">
-                    {{ session.hours }}h {{ session.minutes_part }}m
-                  </div>
-                  <div class="text-xs text-gray-500">
-                    {{ session.actual_minutes }} mins total
-                  </div>
-                </td>
-                <td class="py-4 px-4 text-xs text-gray-500">
-                  {{ session.teaching_file.file_name.name|truncatechars:30 }}
-                </td>
+                {% endfor %}
+                {% endwith %}
                 <td class="py-4 px-4 text-center">
                   <button
                     onclick="deleteSingleSession({{ session.id }})"

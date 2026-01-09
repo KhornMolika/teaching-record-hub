@@ -115,8 +115,8 @@
   <!-- Bottom Navigation -->
   <div class="px-4 pb-6">
     <a
-      href="#"
-      class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2 transition"
+      href="{% url 'settings' %}"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 transition"
     >
       <svg
         class="w-5 h-5"

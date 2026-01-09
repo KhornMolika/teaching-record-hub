@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
-from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile
+from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, LecturerSettings
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
@@ -297,22 +297,83 @@ def workload(request):
     return render(request, 'analytics/lecturer/workload.html', context)
 
 
+@lecturer_required
+def settings_view(request):
+    """
+    Display and handle updates for lecturer settings.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
+
+    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+
+    # Define available columns for teaching records
+    available_record_columns = [
+        'subject', 
+        'date', 
+        'duration', 
+        'lecture_type',
+        'time_in',
+        'time_out',
+        'source_file',
+    ]
+
+    if request.method == 'POST':
+        settings.theme = request.POST.get('theme', settings.theme)
+        settings.date_format = request.POST.get('date_format', settings.date_format)
+        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
+        
+        try:
+            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
+        except ValueError:
+            messages.error(request, "Invalid value for records per page.")
+        
+        # Handle default_columns (checkboxes)
+        selected_columns = request.POST.getlist('default_columns')
+        if selected_columns:
+            settings.default_columns = ",".join(selected_columns)
+        else:
+            settings.default_columns = "" # Or set a sensible default if no columns selected
+
+        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
+        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
+        
+        try:
+            settings.workload_target = int(request.POST.get('workload_target', settings.workload_target))
+        except ValueError:
+            messages.error(request, "Invalid value for workload target.")
+
+        settings.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('settings') # Redirect back to settings page
+
+    context = {
+        'settings': settings,
+        'available_record_columns': available_record_columns, # Pass to template
+    }
+    return render(request, 'analytics/lecturer/settings.html', context)
+
+
 # Lecturer - Teaching Records page
 
 @login_required
 def teaching_records(request):
     """Display teaching records for the logged-in lecturer"""
+    # Get lecturer and their settings
     try:
-        # Get lecturer associated with current user
         lecturer = Lecturer.objects.get(user=request.user)
+        settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
     except Lecturer.DoesNotExist:
         messages.error(request, "No lecturer profile found for your account.")
         return redirect('dashboard')
     
-    # Get all sessions for this lecturer
+    # Get all sessions for this lecturer, applying default sort order from settings
     sessions_query = TeachingSession.objects.filter(
         lecturer=lecturer
-    ).select_related('subject', 'teaching_file').order_by('-date')
+    ).select_related('subject', 'teaching_file').order_by(settings.default_sort_order)
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -415,8 +476,8 @@ def teaching_records(request):
             session.actual_minutes = 0
         sessions_list.append(session)
     
-    # Pagination
-    paginator = Paginator(sessions_list, 20)  # Show 20 sessions per page
+    # Pagination using records_per_page from settings
+    paginator = Paginator(sessions_list, settings.records_per_page)
     page_number = request.GET.get('page', 1)
     sessions = paginator.get_page(page_number)
     
@@ -462,6 +523,11 @@ def teaching_records(request):
     
     search_param = f'&search={search_query}' if search_query else ''
     
+    # Define available columns for the teaching records table display
+    available_table_columns = [
+        'date', 'subject', 'lecture_type', 'time_in', 'time_out', 'duration', 'source_file'
+    ]
+    
     context = {
         'sessions': sessions,
         'subjects': subjects,
@@ -483,7 +549,9 @@ def teaching_records(request):
             'total': total_files,
             'parsed': parsed_files,
             'pending': pending_files,
-        }
+        },
+        'settings': settings, # Pass settings to template
+        'available_table_columns': available_table_columns, # Pass to template
     }
     
     return render(request, 'analytics/lecturer/teaching_records.html', context)

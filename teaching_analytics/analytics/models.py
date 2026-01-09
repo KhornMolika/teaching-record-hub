@@ -17,6 +17,41 @@ class Lecturer(models.Model):
         return f"{self.user.get_full_name()} ({self.lecturer_id})"
 
 
+class LecturerSettings(models.Model):
+    lecturer = models.OneToOneField(
+        Lecturer, on_delete=models.CASCADE, related_name='settings'
+    )
+    theme = models.CharField(
+        max_length=20, default='light', choices=[('light', 'Light'), ('dark', 'Dark')]
+    )
+    date_format = models.CharField(
+        max_length=20, default='YYYY-MM-DD', 
+        help_text="e.g., YYYY-MM-DD, DD/MM/YYYY"
+    )
+    enable_notifications = models.BooleanField(default=True)
+    records_per_page = models.PositiveSmallIntegerField(default=10)
+    
+    # Store as comma-separated string for simplicity, or JSONField for complexity
+    default_columns = models.CharField(
+        max_length=255, default='subject,date,duration,lecture_type',
+        help_text="Comma-separated list of default columns for teaching records table"
+    )
+    default_sort_order = models.CharField(
+        max_length=50, default='-date',
+        help_text="Default sort order for teaching records (e.g., -date, subject__name)"
+    )
+    workload_display = models.CharField(
+        max_length=20, default='weekly',
+        choices=[('weekly', 'Weekly Hours'), ('monthly', 'Monthly Hours'), ('semester', 'Per Semester')]
+    )
+    workload_target = models.PositiveSmallIntegerField(
+        default=15, help_text="Weekly workload target in hours"
+    )
+
+    def __str__(self):
+        return f"Settings for {self.lecturer.user.username}"
+
+
 # Enables per‑subject analytics
 class Subject(models.Model):
     subject_code = models.CharField(max_length=20, unique=True)
