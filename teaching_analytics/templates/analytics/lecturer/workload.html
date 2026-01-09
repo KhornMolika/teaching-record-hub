@@ -1,5 +1,7 @@
-{% extends "../base.html" %} {% block title %}My Workload Analysis{% endblock %}
-{%block content %}
+{% extends "../base.html" %}
+{% block title %}My Workload Analysis{% endblock %}
+
+{% block content %}
 <div class="flex min-h-screen bg-gray-50">
   <!-- Include Sidebar -->
   {% include "components/sidebar.html" %}
@@ -8,276 +10,125 @@
   <div class="flex-1 ml-64 py-8 px-20">
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">My Workload Analysis</h1>
-      <p class="text-gray-500 mt-1">
-        Track your teaching workload and predictions
-      </p>
+      <h1 class="text-3xl font-bold text-gray-900">In-Depth Workload Analysis</h1>
+      <p class="text-gray-500 mt-1">A detailed look at your teaching patterns.</p>
     </div>
 
     <!-- Overload Warning -->
-    <div
-      class="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex items-start gap-3"
-    >
+    {% if is_overload %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex items-start gap-3">
       <div class="flex-shrink-0">
-        <svg
-          class="w-6 h-6 text-red-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
+        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
       </div>
       <div class="flex-1">
         <div class="flex items-center gap-2 mb-1">
           <h3 class="text-red-800 font-semibold">Overload Warning</h3>
-          <span
-            class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium"
-            >22th predicted</span
-          >
+          <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">{{ predicted_total_hours|floatformat:0 }}h predicted</span>
         </div>
         <p class="text-red-700 text-sm">
-          You are projected to exceed your target by 33%. Consider discussing
-          workload redistribution with your department.
+          You are projected to exceed your target by {{ variance_percentage }}%. Consider discussing workload redistribution.
         </p>
       </div>
     </div>
+    {% endif %}
 
-    <div class="grid grid-cols-3 gap-6 mb-8">
-      <!-- Current Progress Card -->
-      <div
-        class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-      >
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Current Progress</h2>
-
-        <!-- Hours Completed -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-sm text-gray-600">Hours Completed</span>
-            <span class="text-sm font-semibold text-gray-900">13h / 180h</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div
-              class="bg-indigo-600 h-3 rounded-full"
-              style="width: 7.2%"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Semester Progress -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-sm text-gray-600">Semester Progress</span>
-            <span class="text-sm font-semibold text-gray-900"
-              >Week 8 of 14</span
-            >
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div
-              class="bg-indigo-600 h-3 rounded-full"
-              style="width: 57.1%"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Predicted vs Target -->
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-sm text-gray-600">Predicted vs Target</span>
-            <span class="text-sm font-semibold text-red-600">238h / 180h</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div class="bg-red-600 h-3 rounded-full" style="width: 100%"></div>
-          </div>
+    <!-- Charts Row -->
+    <div class="grid grid-cols-2 gap-6 mb-8">
+      <!-- Monthly Breakdown -->
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Monthly Hours Breakdown</h2>
+        <div class="h-80">
+          <canvas id="monthlyBreakdownChart"></canvas>
         </div>
       </div>
 
-      <!-- Workload Summary Card -->
+      <!-- Peak Hours -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Workload Summary</h2>
-
-        <div class="space-y-4">
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">Average Weekly Hours</span>
-            <span class="text-sm font-semibold text-gray-900">16.4h</span>
-          </div>
-
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">Target Weekly Hours</span>
-            <span class="text-sm font-semibold text-gray-900">15.0h</span>
-          </div>
-
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">Weeks Remaining</span>
-            <span class="text-sm font-semibold text-gray-900">6 weeks</span>
-          </div>
-
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">Expected Additional</span>
-            <span class="text-sm font-semibold text-gray-900">~108h</span>
-          </div>
-
-          <div
-            class="flex justify-between items-center pt-4 border-t border-gray-200"
-          >
-            <span class="text-sm text-gray-600">Variance from Target</span>
-            <span class="text-sm font-semibold text-red-600">+58h (33%)</span>
-          </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Peak Teaching Hours</h2>
+        <div class="h-80">
+          <canvas id="peakHoursChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Weekly Hours Breakdown Chart -->
+    <!-- Subject Deep Dive Table -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <h2 class="text-xl font-bold text-gray-900 mb-6">
-        Weekly Hours Breakdown
-      </h2>
-
-      <div class="relative" style="height: 400px">
-        <!-- Y-axis labels -->
-        <div
-          class="absolute left-0 top-0 bottom-12 flex flex-col justify-between text-xs text-gray-500 pr-2"
-        >
-          <span>20</span>
-          <span>15</span>
-          <span>10</span>
-          <span>5</span>
-          <span>0</span>
-        </div>
-
-        <!-- Chart area -->
-        <div class="absolute left-8 right-0 top-0 bottom-12">
-          <!-- Horizontal grid lines -->
-          <div class="absolute inset-0 flex flex-col justify-between">
-            <div class="border-t border-gray-200"></div>
-            <div class="border-t border-dashed border-gray-300"></div>
-            <div class="border-t border-gray-200"></div>
-            <div class="border-t border-gray-200"></div>
-            <div class="border-t border-gray-200"></div>
-          </div>
-
-          <!-- Target line -->
-          <div
-            class="absolute left-0 right-0 border-t-2 border-dashed border-gray-400"
-            style="top: 25%"
-          ></div>
-          <span class="absolute right-0 text-xs text-gray-500" style="top: 23%"
-            >Target (15h/week)</span
-          >
-
-          <!-- Bars -->
-          <div
-            class="absolute inset-0 flex items-end justify-around gap-2 pb-2"
-          >
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 60%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W1</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 75%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W2</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 70%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W3</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 85%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W4</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 78%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W5</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 95%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W6</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 82%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W7</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full bg-indigo-600 rounded-t"
-                style="height: 88%"
-              ></div>
-              <span class="text-xs text-gray-600 mt-2">W8</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center opacity-30">
-              <div
-                class="w-full border-2 border-indigo-600 border-dashed rounded-t"
-                style="height: 0%"
-              ></div>
-              <span class="text-xs text-gray-400 mt-2">W9</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center opacity-30">
-              <div
-                class="w-full border-2 border-indigo-600 border-dashed rounded-t"
-                style="height: 0%"
-              ></div>
-              <span class="text-xs text-gray-400 mt-2">W10</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center opacity-30">
-              <div
-                class="w-full border-2 border-indigo-600 border-dashed rounded-t"
-                style="height: 0%"
-              ></div>
-              <span class="text-xs text-gray-400 mt-2">W11</span>
-            </div>
-            <div class="flex-1 flex flex-col items-center opacity-30">
-              <div
-                class="w-full border-2 border-indigo-600 border-dashed rounded-t"
-                style="height: 0%"
-              ></div>
-              <span class="text-xs text-gray-400 mt-2">W12</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Legend -->
-        <div
-          class="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex items-center gap-6 text-sm"
-        >
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-indigo-600 rounded"></div>
-            <span class="text-gray-600">Actual Hours</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <div
-              class="w-4 h-0.5 border-t-2 border-dashed border-gray-400"
-            ></div>
-            <span class="text-gray-600">Target (15h/week)</span>
-          </div>
-        </div>
-      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-6">Subject Deep Dive</h2>
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3">Subject</th>
+            <th scope="col" class="px-6 py-3">Total Hours</th>
+            <th scope="col" class="px-6 py-3">Sessions</th>
+            <th scope="col" class="px-6 py-3">Avg. Session Length (mins)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subject in subject_deep_dive %}
+          <tr class="bg-white border-b">
+            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ subject.subject__subject_name }}</th>
+            <td class="px-6 py-4">{{ subject.total_hours|floatformat:1 }}</td>
+            <td class="px-6 py-4">{{ subject.session_count }}</td>
+            <td class="px-6 py-4">{{ subject.avg_session_length|floatformat:0 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center py-12">No subject data available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Monthly Breakdown Chart
+  const monthlyCtx = document.getElementById('monthlyBreakdownChart');
+  if (monthlyCtx) {
+    const monthLabels = [{% for item in monthly_breakdown %}'{{ item.month_name }}',{% endfor %}];
+    const monthHours = [{% for item in monthly_breakdown %}{{ item.total_hours|floatformat:1 }},{% endfor %}];
+    
+    new Chart(monthlyCtx, {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Monthly Hours',
+          data: monthHours,
+          backgroundColor: '#38b2ac',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+      }
+    });
+  }
+
+  // Peak Hours Chart
+  const peakHoursCtx = document.getElementById('peakHoursChart');
+  if (peakHoursCtx) {
+    const peakLabels = [{% for item in peak_hours_data %}'{{ item.hour }}:00',{% endfor %}];
+    const peakCounts = [{% for item in peak_hours_data %}{{ item.count }},{% endfor %}];
+    
+    new Chart(peakHoursCtx, {
+      type: 'polarArea',
+      data: {
+        labels: peakLabels,
+        datasets: [{
+          data: peakCounts,
+          backgroundColor: ['#4c51bf', '#ed8936', '#38b2ac', '#a0aec0', '#667eea', '#f6ad55'],
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right' } }
+      }
+    });
+  }
+</script>
 {% endblock %}

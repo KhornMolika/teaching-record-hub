@@ -224,7 +224,77 @@ def home(request):
 
 @lecturer_required
 def workload(request):
-    return render(request, 'analytics/lecturer/workload.html')
+    """
+    Provides a more detailed and distinct workload analysis, focusing on
+    monthly trends, subject-specific details, and peak teaching hours.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
+
+    all_sessions = TeachingSession.objects.filter(lecturer=lecturer)
+
+    # --- Overload Warning Data (from previous implementation) ---
+    total_minutes_completed = sum(session.minutes for session in all_sessions)
+    total_hours_completed = round(total_minutes_completed / 60, 1)
+    weeks_with_sessions = all_sessions.values("week_number").distinct().count()
+    average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
+    
+    SEMESTER_WEEKS = 14
+    TARGET_HOURS = 180
+    weeks_remaining = max(0, SEMESTER_WEEKS - weeks_with_sessions)
+    predicted_total_hours = round(total_hours_completed + (average_weekly_hours * weeks_remaining), 1)
+    variance_from_target = predicted_total_hours - TARGET_HOURS
+    variance_percentage = round((variance_from_target / TARGET_HOURS) * 100, 1) if TARGET_HOURS > 0 else 0
+    is_overload = variance_from_target > 0
+
+    # --- New In-depth Analytics ---
+    
+    # 1. Monthly Breakdown
+    monthly_breakdown = list(
+        all_sessions.values("month")
+        .annotate(total_hours=Sum("minutes") / 60.0)
+        .order_by("month")
+    )
+    # Add month names for charting
+    for item in monthly_breakdown:
+        item['month_name'] = datetime(2000, item['month'], 1).strftime('%B')
+
+    
+    # 2. Subject Deep Dive
+    subject_deep_dive = list(
+        all_sessions.values("subject__subject_code", "subject__subject_name")
+        .annotate(
+            total_hours=Sum("minutes") / 60.0,
+            session_count=Count("id"),
+            avg_session_length=Sum("minutes") / Count("id")
+        ).order_by("-total_hours")
+    )
+
+    # 3. Peak Hours Analysis
+    peak_hours_data = list(
+        all_sessions.exclude(time_in__isnull=True)
+        .extra(select={'hour': "CAST(strftime('%%H', time_in) AS INTEGER)"})
+        .values('hour')
+        .annotate(count=Count('id'))
+        .order_by('hour')
+    )
+
+    context = {
+        # Overload warning
+        "is_overload": is_overload,
+        "variance_percentage": variance_percentage,
+        "predicted_total_hours": predicted_total_hours,
+        
+        # New analytics
+        "monthly_breakdown": monthly_breakdown,
+        "subject_deep_dive": subject_deep_dive,
+        "peak_hours_data": peak_hours_data,
+    }
+
+    return render(request, 'analytics/lecturer/workload.html', context)
 
 
 # Lecturer - Teaching Records page
