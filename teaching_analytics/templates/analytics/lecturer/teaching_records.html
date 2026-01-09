@@ -110,7 +110,7 @@
               <tbody>
                 {% if files %}
                   {% for file in files %}
-                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-file-id="{{ file.id }}">
                     <td class="py-4 px-4">
                       <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +146,11 @@
                         </span>
                       {% endif %}
                     </td>
-                    <td class="py-4 px-4 text-sm font-semibold text-gray-900 text-right">{{ file.session_count }}</td>
+                    <td class="py-4 px-4 text-sm font-semibold text-right">
+                      <span class="session-count-{{ file.id }} {% if file.session_count == 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                        {{ file.session_count }}
+                      </span>
+                    </td>
                     <td class="py-4 px-4 text-center">
                       <div class="flex items-center justify-center gap-2">
                         {% if not file.is_parsed %}
@@ -159,7 +163,7 @@
                           </button>
                         </form>
                         {% endif %}
-                        <form method="post" action="{% url 'delete_file' file.id %}" class="inline" onsubmit="return confirm('Delete this file and all its sessions?')">
+                        <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
                           {% csrf_token %}
                           <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,6 +383,44 @@
   </div>
 </div>
 
+<!-- No Data Found Modal -->
+<div id="noDataModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
+    <div class="flex items-start gap-4 mb-6">
+      <div class="flex-shrink-0">
+        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">⚠️ No Data Found</h2>
+        <p class="text-gray-600 mb-4">The following file(s) were uploaded but contain no teaching session data:</p>
+        <div id="noDataFileList" class="bg-gray-50 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+          <!-- File list will be populated by JavaScript -->
+        </div>
+        <p class="text-sm text-gray-500">Would you like to remove these empty files?</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3 justify-end">
+      <button 
+        type="button" 
+        onclick="keepEmptyFiles()"
+        class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+        Keep Files
+      </button>
+      <button 
+        type="button" 
+        onclick="removeEmptyFiles()"
+        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+        Remove Files
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="{% static 'js/teaching_records.js' %}" defer></script>
 <script>
 // Store Django data
@@ -405,6 +447,11 @@ const DJANGO_DATA = {
     {% endfor %}
   ]
 };
+
+// Check for files with 0 sessions on page load (after upload/parse)
+document.addEventListener('DOMContentLoaded', function() {
+  checkForEmptyFiles();
+});
 
 </script>
 

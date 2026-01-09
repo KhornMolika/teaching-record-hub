@@ -27,7 +27,6 @@ function switchTab(tab) {
 
 function handleFileSelection(event) {
   const files = Array.from(event.target.files);
-  const duplicates = [];
 
   files.forEach((file) => {
     const isDuplicateInSelection = selectedFiles.some(
@@ -37,22 +36,22 @@ function handleFileSelection(event) {
         f.lastModified === file.lastModified
     );
 
-    const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(file.name);
+    if (!isDuplicateInSelection) {
+      const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(
+        file.name
+      );
+      const isValidFormat = file.name.toLowerCase().endsWith(".xlsb");
 
-    if (isDuplicateInDatabase) {
-      duplicates.push(file.name);
-    } else if (!isDuplicateInSelection) {
-      selectedFiles.push(file);
+      selectedFiles.push({
+        file: file,
+        name: file.name,
+        size: file.size,
+        lastModified: file.lastModified,
+        isDuplicate: isDuplicateInDatabase,
+        isValid: isValidFormat,
+      });
     }
   });
-
-  if (duplicates.length > 0) {
-    alert(
-      `⚠️ The following file(s) have already been uploaded:\n\n${duplicates.join(
-        "\n"
-      )}\n\nThey will not be added to the upload list.`
-    );
-  }
 
   updateFileList();
   event.target.value = "";
@@ -74,7 +73,7 @@ function updateFileList() {
 
   if (selectedFiles.length === 0) {
     fileListContainer.innerHTML =
-      '<div class="text-gray-500 text-center">No files selected</div>';
+      '<div class="text-gray-500 text-center py-4">No files selected</div>';
     clearAllBtn.classList.add("hidden");
     return;
   }
@@ -84,41 +83,61 @@ function updateFileList() {
   let html = "";
   let totalSize = 0;
   let validCount = 0;
+  let duplicateCount = 0;
 
-  selectedFiles.forEach((file, index) => {
-    const isValid = file.name.toLowerCase().endsWith(".xlsb");
-    if (isValid) validCount++;
+  selectedFiles.forEach((fileObj, index) => {
+    const { file, name, size, isDuplicate, isValid } = fileObj;
 
-    const iconClass = isValid ? "text-green-500" : "text-red-500";
-    const icon = isValid ? "✓" : "✗";
-    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-    totalSize += file.size;
+    if (isValid && !isDuplicate) validCount++;
+    if (isDuplicate) duplicateCount++;
+
+    let statusIcon, statusClass, borderClass, statusLabel;
+
+    if (isDuplicate) {
+      statusIcon = "⚠️";
+      statusClass = "text-orange-600";
+      borderClass = "border-orange-300 bg-orange-50";
+      statusLabel =
+        '<span class="text-orange-600 text-xs font-semibold whitespace-nowrap mr-2">Already Uploaded</span>';
+    } else if (!isValid) {
+      statusIcon = "✗";
+      statusClass = "text-red-600";
+      borderClass = "border-red-300 bg-red-50";
+      statusLabel =
+        '<span class="text-red-600 text-xs font-semibold whitespace-nowrap mr-2">Invalid Format</span>';
+    } else {
+      statusIcon = "✓";
+      statusClass = "text-green-600";
+      borderClass = "border-green-200 bg-white";
+      statusLabel = "";
+    }
+
+    const sizeInMB = (size / (1024 * 1024)).toFixed(2);
+    totalSize += size;
 
     html += `
-      <div class="flex items-center justify-between p-3 mb-2 bg-white rounded-lg border ${
-        isValid ? "border-green-200" : "border-red-200"
-      }">
+      <div class="flex items-center justify-between p-3 mb-2 rounded-lg border ${borderClass} transition-all">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <span class="${iconClass} font-bold text-lg">${icon}</span>
+          <span class="${statusClass} font-bold text-lg">${statusIcon}</span>
           <div class="flex-1 min-w-0">
             <div class="${
-              isValid ? "text-gray-700" : "text-red-600"
-            } font-medium truncate" title="${file.name}">
-              ${index + 1}. ${file.name}
+              isDuplicate
+                ? "text-orange-700"
+                : isValid
+                ? "text-gray-700"
+                : "text-red-600"
+            } font-medium truncate" title="${name}">
+              ${index + 1}. ${name}
             </div>
             <div class="text-xs text-gray-500">${sizeInMB} MB</div>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          ${
-            !isValid
-              ? '<span class="text-red-500 text-xs whitespace-nowrap mr-2">Invalid</span>'
-              : ""
-          }
+          ${statusLabel}
           <button 
             type="button"
             onclick="removeFile(${index})"
-            class="p-1 text-red-600 hover:bg-red-50 rounded transition"
+            class="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition"
             title="Remove file">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -130,16 +149,53 @@ function updateFileList() {
   });
 
   const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
+  const invalidCount = selectedFiles.length - validCount - duplicateCount;
 
   html += `
-    <div class="mt-3 pt-3 border-t border-gray-300">
+    <div class="mt-4 pt-4 border-t border-gray-300 space-y-2">
       <div class="flex justify-between text-sm">
-        <span class="text-gray-600">
-          <strong>${validCount}</strong> of <strong>${selectedFiles.length}</strong> files valid
-        </span>
-        <span class="text-gray-600">
-          Total: <strong>${totalSizeInMB} MB</strong>
-        </span>
+        <div class="space-y-1">
+          <div class="text-gray-700">
+            <span class="inline-flex items-center gap-1">
+              <span class="text-green-600 font-bold">✓</span>
+              <strong class="text-green-700">${validCount}</strong> ready to upload
+            </span>
+          </div>
+          ${
+            duplicateCount > 0
+              ? `
+            <div class="text-orange-600">
+              <span class="inline-flex items-center gap-1">
+                <span class="font-bold">⚠️</span>
+                <strong>${duplicateCount}</strong> already uploaded
+              </span>
+            </div>
+          `
+              : ""
+          }
+          ${
+            invalidCount > 0
+              ? `
+            <div class="text-red-600">
+              <span class="inline-flex items-center gap-1">
+                <span class="font-bold">✗</span>
+                <strong>${invalidCount}</strong> invalid format
+              </span>
+            </div>
+          `
+              : ""
+          }
+        </div>
+        <div class="text-right">
+          <div class="text-gray-600">
+            Total: <strong>${totalSizeInMB} MB</strong>
+          </div>
+          <div class="text-gray-500 text-xs">
+            ${selectedFiles.length} file${
+    selectedFiles.length !== 1 ? "s" : ""
+  } selected
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -159,18 +215,38 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
     return false;
   }
 
-  const invalidFiles = selectedFiles.filter(
-    (f) => !f.name.toLowerCase().endsWith(".xlsb")
-  );
-  if (invalidFiles.length > 0) {
-    alert(
-      `Please remove invalid files before uploading. ${
-        invalidFiles.length
-      } invalid file(s) detected:\n\n${invalidFiles
-        .map((f) => f.name)
-        .join("\n")}`
-    );
+  const validFiles = selectedFiles.filter((f) => f.isValid && !f.isDuplicate);
+  const duplicateFiles = selectedFiles.filter((f) => f.isDuplicate);
+  const invalidFiles = selectedFiles.filter((f) => !f.isValid);
+
+  if (validFiles.length === 0) {
+    let message = "No valid files to upload.\n\n";
+    if (duplicateFiles.length > 0) {
+      message += `${duplicateFiles.length} file(s) already uploaded.\n`;
+    }
+    if (invalidFiles.length > 0) {
+      message += `${invalidFiles.length} file(s) have invalid format.\n`;
+    }
+    message += "\nPlease add new XLSB files or remove invalid/duplicate files.";
+    alert(message);
     return false;
+  }
+
+  if (duplicateFiles.length > 0 || invalidFiles.length > 0) {
+    let message = `Uploading ${validFiles.length} valid file(s).\n\n`;
+    if (duplicateFiles.length > 0) {
+      message += `⚠️ Skipping ${duplicateFiles.length} duplicate file(s):\n`;
+      message += duplicateFiles.map((f) => `  • ${f.name}`).join("\n") + "\n\n";
+    }
+    if (invalidFiles.length > 0) {
+      message += `✗ Skipping ${invalidFiles.length} invalid file(s):\n`;
+      message += invalidFiles.map((f) => `  • ${f.name}`).join("\n") + "\n\n";
+    }
+    message += "Continue with upload?";
+
+    if (!confirm(message)) {
+      return false;
+    }
   }
 
   const formData = new FormData();
@@ -182,13 +258,13 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
     formData.append("auto_parse", "on");
   }
 
-  selectedFiles.forEach((file) => {
-    formData.append("files", file);
+  validFiles.forEach((fileObj) => {
+    formData.append("files", fileObj.file);
   });
 
   const submitBtn = document.getElementById("uploadSubmitBtn");
   submitBtn.disabled = true;
-  submitBtn.innerHTML = "⏳ Uploading...";
+  submitBtn.innerHTML = `⏳ Uploading ${validFiles.length} file(s)...`;
   submitBtn.classList.add("opacity-50", "cursor-not-allowed");
 
   fetch(this.action, {
@@ -445,7 +521,6 @@ dropZone.addEventListener(
   (e) => {
     const dt = e.dataTransfer;
     const files = Array.from(dt.files);
-    const duplicates = [];
 
     files.forEach((file) => {
       const isDuplicateInSelection = selectedFiles.some(
@@ -455,31 +530,143 @@ dropZone.addEventListener(
           f.lastModified === file.lastModified
       );
 
-      const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(
-        file.name
-      );
+      if (!isDuplicateInSelection) {
+        const isDuplicateInDatabase = DJANGO_DATA.existingFiles.includes(
+          file.name
+        );
+        const isValidFormat = file.name.toLowerCase().endsWith(".xlsb");
 
-      if (isDuplicateInDatabase) {
-        duplicates.push(file.name);
-      } else if (!isDuplicateInSelection) {
-        selectedFiles.push(file);
+        selectedFiles.push({
+          file: file,
+          name: file.name,
+          size: file.size,
+          lastModified: file.lastModified,
+          isDuplicate: isDuplicateInDatabase,
+          isValid: isValidFormat,
+        });
       }
     });
-
-    if (duplicates.length > 0) {
-      alert(
-        `⚠️ The following file(s) have already been uploaded:\n\n${duplicates.join(
-          "\n"
-        )}\n\nThey will not be added to the upload list.`
-      );
-    }
 
     updateFileList();
   },
   false
 );
 
+// Store files with no data for the modal
+let emptyFiles = [];
+
+// Check for files with 0 sessions
+function checkForEmptyFiles() {
+  emptyFiles = [];
+  const fileRows = document.querySelectorAll("[data-file-id]");
+
+  fileRows.forEach((row) => {
+    const fileId = row.getAttribute("data-file-id");
+    const sessionCountElement = row.querySelector(`.session-count-${fileId}`);
+
+    if (sessionCountElement) {
+      const sessionCount = parseInt(sessionCountElement.textContent.trim());
+      if (sessionCount === 0) {
+        const fileName = row
+          .querySelector("td:first-child span.text-sm")
+          .textContent.trim();
+        emptyFiles.push({
+          id: fileId,
+          name: fileName,
+        });
+      }
+    }
+  });
+
+  // Show modal if there are empty files
+  if (emptyFiles.length > 0) {
+    showNoDataModal();
+  }
+}
+
+// Show the no data modal
+function showNoDataModal() {
+  const modal = document.getElementById("noDataModal");
+  const fileList = document.getElementById("noDataFileList");
+
+  // Build the file list HTML
+  let html = '<div class="space-y-2">';
+  emptyFiles.forEach((file) => {
+    html += `
+      <div class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-sm text-gray-700 font-medium">${file.name}</span>
+        <span class="ml-auto text-xs text-red-600 font-semibold">0 sessions</span>
+      </div>
+    `;
+  });
+  html += "</div>";
+
+  fileList.innerHTML = html;
+  modal.classList.remove("hidden");
+}
+
+// Keep the empty files (close modal)
+function keepEmptyFiles() {
+  const modal = document.getElementById("noDataModal");
+  modal.classList.add("hidden");
+  emptyFiles = [];
+}
+
+// Remove the empty files
+function removeEmptyFiles() {
+  if (emptyFiles.length === 0) {
+    keepEmptyFiles();
+    return;
+  }
+
+  // Create a form to delete multiple files
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.style.display = "none";
+
+  // Add CSRF token
+  const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
+  if (csrfToken) {
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden";
+    csrfInput.name = "csrfmiddlewaretoken";
+    csrfInput.value = csrfToken.value;
+    form.appendChild(csrfInput);
+  }
+
+  // Delete files one by one
+  let deletedCount = 0;
+  const totalFiles = emptyFiles.length;
+
+  emptyFiles.forEach((file, index) => {
+    const deleteForm = document.querySelector(`.delete-file-form-${file.id}`);
+    if (deleteForm) {
+      // Trigger the form submission
+      setTimeout(() => {
+        deleteForm.submit();
+      }, index * 100); // Stagger submissions slightly
+    }
+  });
+
+  // Close modal
+  const modal = document.getElementById("noDataModal");
+  modal.classList.add("hidden");
+
+  // Show a loading indicator
+  setTimeout(() => {
+    window.location.reload();
+  }, totalFiles * 150);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   updateDownloadLinks();
   updateStats();
+
+  // Check for empty files after page load (useful after upload with auto-parse)
+  setTimeout(() => {
+    checkForEmptyFiles();
+  }, 500);
 });
