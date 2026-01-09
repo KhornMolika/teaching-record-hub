@@ -23,10 +23,11 @@
       <div class="flex-1">
         <div class="flex items-center gap-2 mb-1">
           <h3 class="text-red-800 font-semibold">Overload Warning</h3>
-          <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">{{ predicted_total_hours|floatformat:0 }}h predicted</span>
+          <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">{{ predicted_total_hours|floatformat:0 }}h predicted (Target: {{ target_hours }}h)</span>
         </div>
         <p class="text-red-700 text-sm">
           You are projected to exceed your target by {{ variance_percentage }}%. Consider discussing workload redistribution.
+          You have {{ remaining_hours|floatformat:0 }} hours remaining to reach your target.
         </p>
       </div>
     </div>
@@ -34,11 +35,16 @@
 
     <!-- Charts Row -->
     <div class="grid grid-cols-2 gap-6 mb-8">
-      <!-- Monthly Breakdown -->
+      <!-- Dynamic Breakdown Chart -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Monthly Hours Breakdown</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-6">
+          {% if workload_display_type == 'weekly' %}Weekly Hours Breakdown
+          {% elif workload_display_type == 'monthly' %}Monthly Hours Breakdown
+          {% elif workload_display_type == 'semester' %}Semester Hours Breakdown
+          {% else %}Workload Breakdown{% endif %}
+        </h2>
         <div class="h-80">
-          <canvas id="monthlyBreakdownChart"></canvas>
+          <canvas id="workloadBreakdownChart"></canvas>
         </div>
       </div>
 
@@ -85,19 +91,20 @@
 
 {% block extra_js %}
 <script>
-  // Monthly Breakdown Chart
-  const monthlyCtx = document.getElementById('monthlyBreakdownChart');
-  if (monthlyCtx) {
-    const monthLabels = [{% for item in monthly_breakdown %}'{{ item.month_name }}',{% endfor %}];
-    const monthHours = [{% for item in monthly_breakdown %}{{ item.total_hours|floatformat:1 }},{% endfor %}];
-    
-    new Chart(monthlyCtx, {
+  // Dynamic Workload Breakdown Chart
+  const workloadBreakdownCtx = document.getElementById('workloadBreakdownChart');
+  if (workloadBreakdownCtx) {
+    const breakdownLabels = [{% for item in workload_breakdown_data %}'{{ item.label }}',{% endfor %}];
+    const breakdownHours = [{% for item in workload_breakdown_data %}{{ item.total_hours|floatformat:1 }},{% endfor %}];
+    const chartTitle = "{% if workload_display_type == 'weekly' %}Weekly Hours{% elif workload_display_type == 'monthly' %}Monthly Hours{% elif workload_display_type == 'semester' %}Semester Hours{% else %}Hours{% endif %}";
+
+    new Chart(workloadBreakdownCtx, {
       type: 'bar',
       data: {
-        labels: monthLabels,
+        labels: breakdownLabels,
         datasets: [{
-          label: 'Monthly Hours',
-          data: monthHours,
+          label: chartTitle,
+          data: breakdownHours,
           backgroundColor: '#38b2ac',
         }]
       },

@@ -226,43 +226,60 @@ def home(request):
 def workload(request):
     """
     Provides a more detailed and distinct workload analysis, focusing on
-    monthly trends, subject-specific details, and peak teaching hours.
+    monthly trends, subject-specific details, and peak teaching hours,
+    customizable by lecturer settings.
     """
     try:
         lecturer = Lecturer.objects.get(user=request.user)
+        settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
     except Lecturer.DoesNotExist:
         messages.error(request, "No lecturer profile found. Please contact admin.")
         return redirect("login")
 
     all_sessions = TeachingSession.objects.filter(lecturer=lecturer)
 
-    # --- Overload Warning Data (from previous implementation) ---
+    # --- Overload Warning Data ---
     total_minutes_completed = sum(session.minutes for session in all_sessions)
     total_hours_completed = round(total_minutes_completed / 60, 1)
     weeks_with_sessions = all_sessions.values("week_number").distinct().count()
     average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
     
     SEMESTER_WEEKS = 14
-    TARGET_HOURS = 180
+    TARGET_HOURS = settings.workload_target # Use workload_target from settings
     weeks_remaining = max(0, SEMESTER_WEEKS - weeks_with_sessions)
     predicted_total_hours = round(total_hours_completed + (average_weekly_hours * weeks_remaining), 1)
     variance_from_target = predicted_total_hours - TARGET_HOURS
     variance_percentage = round((variance_from_target / TARGET_HOURS) * 100, 1) if TARGET_HOURS > 0 else 0
     is_overload = variance_from_target > 0
 
-    # --- New In-depth Analytics ---
-    
-    # 1. Monthly Breakdown
-    monthly_breakdown = list(
-        all_sessions.values("month")
-        .annotate(total_hours=Sum("minutes") / 60.0)
-        .order_by("month")
-    )
-    # Add month names for charting
-    for item in monthly_breakdown:
-        item['month_name'] = datetime(2000, item['month'], 1).strftime('%B')
+    # --- New In-depth Analytics based on settings.workload_display ---
+    workload_breakdown_data = []
+    if settings.workload_display == 'weekly':
+        workload_breakdown_data = list(
+            all_sessions.values("week_number")
+            .annotate(total_hours=Sum("minutes") / 60.0)
+            .order_by("week_number")
+        )
+        for item in workload_breakdown_data:
+            item['label'] = f'Week {item["week_number"]}'
+    elif settings.workload_display == 'monthly':
+        workload_breakdown_data = list(
+            all_sessions.values("month")
+            .annotate(total_hours=Sum("minutes") / 60.0)
+            .order_by("month")
+        )
+        for item in workload_breakdown_data:
+            item['label'] = datetime(2000, item['month'], 1).strftime('%B')
+    elif settings.workload_display == 'semester':
+        workload_breakdown_data = list(
+            all_sessions.values("teaching_file__semester")
+            .annotate(total_hours=Sum("minutes") / 60.0)
+            .order_by("teaching_file__semester")
+        )
+        for item in workload_breakdown_data:
+            item['label'] = item["teaching_file__semester"] if item["teaching_file__semester"] else "Undefined Semester"
 
-    
+
     # 2. Subject Deep Dive
     subject_deep_dive = list(
         all_sessions.values("subject__subject_code", "subject__subject_name")
@@ -287,9 +304,12 @@ def workload(request):
         "is_overload": is_overload,
         "variance_percentage": variance_percentage,
         "predicted_total_hours": predicted_total_hours,
-        
+        "target_hours": TARGET_HOURS, # Pass target hours to template
+        "remaining_hours": max(0, TARGET_HOURS - total_hours_completed), # Also pass remaining hours
+
         # New analytics
-        "monthly_breakdown": monthly_breakdown,
+        "workload_breakdown_data": workload_breakdown_data, # Dynamic breakdown
+        "workload_display_type": settings.workload_display, # Pass display type
         "subject_deep_dive": subject_deep_dive,
         "peak_hours_data": peak_hours_data,
     }
@@ -341,10 +361,16 @@ def settings_view(request):
         settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
         settings.workload_display = request.POST.get('workload_display', settings.workload_display)
         
+        print(f"DEBUG: Raw workload_target from POST: {request.POST.get('workload_target')}")
         try:
-            settings.workload_target = int(request.POST.get('workload_target', settings.workload_target))
+            posted_workload_target = request.POST.get('workload_target')
+            if posted_workload_target is not None and posted_workload_target != '':
+                settings.workload_target = int(posted_workload_target)
+            # If it's an empty string, the default will apply, or the existing value will be kept.
+            # If it's not provided in POST, settings.workload_target will keep its existing value as per the .get() default.
         except ValueError:
-            messages.error(request, "Invalid value for workload target.")
+            messages.error(request, "Invalid value for workload target. Please enter a number.")
+        print(f"DEBUG: settings.workload_target after processing: {settings.workload_target}")
 
         settings.save()
         messages.success(request, "Settings updated successfully!")
