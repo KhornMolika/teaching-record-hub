@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
 import csv
 from .serializers import TeachingSessionSerializer # Import TeachingSessionSerializer
+from .utils import format_date, get_python_date_format
 
 
 # Custom decorators for role-based access control
@@ -145,6 +146,7 @@ def home(request):
     """
     try:
         lecturer = Lecturer.objects.get(user=request.user)
+        settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
     except Lecturer.DoesNotExist:
         messages.error(request, "No lecturer profile found. Please contact admin.")
         return redirect("login")
@@ -204,6 +206,10 @@ def home(request):
     # --- Upcoming Sessions ---
     today = datetime.now().date()
     upcoming_sessions = all_sessions.filter(date__gte=today).order_by("date", "time_in")[:3]
+    
+    # Format dates for upcoming sessions
+    for session in upcoming_sessions:
+        session.formatted_date = format_date(session.date, settings.date_format)
 
     context = {
         "total_hours_completed": total_hours_completed,
@@ -217,7 +223,8 @@ def home(request):
         "max_weekly_hours": max_weekly_hours,
         "subjects_by_hours": subjects_by_hours,
         "upcoming_sessions": upcoming_sessions,
-        "today": today
+        "today": today,
+        "settings": settings,  # Add settings to context
     }
 
     return render(request, "analytics/lecturer/home.html", context)
@@ -581,6 +588,9 @@ def teaching_records(request):
             session.hours_decimal = 0
             session.actual_minutes = 0
         
+        # Format the date according to user preference
+        session.formatted_date = format_date(session.date, settings.date_format)
+        
         sessions_list.append(session)
     
     # Pagination - use the list with calculated fields
@@ -924,6 +934,10 @@ def download_records(request):
 
 def generate_csv_report(lecturer, sessions, scope='all'):
     """Generate CSV report"""
+    # Get lecturer settings for date format
+    settings, _ = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+    date_format = get_python_date_format(settings.date_format)
+    
     response = HttpResponse(content_type='text/csv')
     
     # Create filename based on scope
@@ -960,7 +974,7 @@ def generate_csv_report(lecturer, sessions, scope='all'):
             duration_str = f"{hours_part}h {minutes_part}m"
         
         writer.writerow([
-            session.date.strftime('%Y-%m-%d'),
+            session.date.strftime(date_format),  # Use user's date format
             session.subject.subject_code,
             session.subject.subject_name,
             session.lecture_type if session.lecture_type else '-',
@@ -983,6 +997,10 @@ def generate_pdf_report(lecturer, sessions, scope='all'):
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
     from io import BytesIO
+    
+    # Get lecturer settings for date format
+    settings, _ = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+    date_format = get_python_date_format(settings.date_format)
     
     # Create buffer
     buffer = BytesIO()
@@ -1078,7 +1096,7 @@ def generate_pdf_report(lecturer, sessions, scope='all'):
             duration_str = f"{hours_part}h {minutes_part}m"
         
         table_data.append([
-            session.date.strftime('%Y-%m-%d'),
+            session.date.strftime(date_format),  # Use user's date format
             f"{session.subject.subject_code}",
             session.lecture_type[:15] if session.lecture_type else '-',
             session.time_in.strftime('%H:%M') if session.time_in else '-',
@@ -1134,6 +1152,10 @@ def generate_xlsx_report(lecturer, sessions, scope='all'):
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
     from io import BytesIO
+    
+    # Get lecturer settings for date format
+    settings, _ = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+    date_format = get_python_date_format(settings.date_format)
     
     # Create workbook
     wb = Workbook()
@@ -1212,7 +1234,7 @@ def generate_xlsx_report(lecturer, sessions, scope='all'):
             minutes_part = actual_minutes % 60
             duration_str = f"{hours_part}h {minutes_part}m"
         
-        ws.cell(row=row_num, column=1).value = session.date.strftime('%Y-%m-%d')
+        ws.cell(row=row_num, column=1).value = session.date.strftime(date_format)  # Use user's date format
         ws.cell(row=row_num, column=2).value = session.subject.subject_code
         ws.cell(row=row_num, column=3).value = session.subject.subject_name
         ws.cell(row=row_num, column=4).value = session.lecture_type if session.lecture_type else '-'

@@ -18,23 +18,52 @@
       <section class="mb-10 p-6 bg-white rounded-lg shadow">
         <h2 class="text-2xl font-semibold text-gray-800 mb-6">General Settings</h2>
 
-        <div class="mb-4">
+        <!-- Theme Selector with Preview -->
+        <div class="mb-6">
           <label for="id_theme" class="block text-gray-700 text-sm font-bold mb-2">Theme:</label>
-          <select id="id_theme" name="theme" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Light</option>
-            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Dark</option>
+          <select id="id_theme" name="theme" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" onchange="previewTheme(this.value)">
+            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>☀️ Light Mode</option>
+            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>🌙 Dark Mode</option>
+            <option value="auto" {% if settings.theme == 'auto' %}selected{% endif %}>🌓 Auto (System Preference)</option>
           </select>
+          <p class="text-xs text-gray-500 mt-2">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Changes will take effect after saving
+          </p>
         </div>
 
-        <div class="mb-4">
+        <!-- Date Format Selector with Preview -->
+        <div class="mb-6">
           <label for="id_date_format" class="block text-gray-700 text-sm font-bold mb-2">Date Format:</label>
-          <input type="text" id="id_date_format" name="date_format" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., YYYY-MM-DD" value="{{ settings.date_format }}">
+          <select id="id_date_format" name="date_format" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" onchange="updateDatePreview(this.value)">
+            <option value="YYYY-MM-DD" {% if settings.date_format == 'YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD</option>
+            <option value="MM/DD/YYYY" {% if settings.date_format == 'MM/DD/YYYY' %}selected{% endif %}>MM/DD/YYYY</option>
+            <option value="DD/MM/YYYY" {% if settings.date_format == 'DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY</option>
+            <option value="DD-MM-YYYY" {% if settings.date_format == 'DD-MM-YYYY' %}selected{% endif %}>DD-MM-YYYY</option>
+            <option value="MMMM DD, YYYY" {% if settings.date_format == 'MMMM DD, YYYY' %}selected{% endif %}>MMMM DD, YYYY</option>
+            <option value="DD MMMM YYYY" {% if settings.date_format == 'DD MMMM YYYY' %}selected{% endif %}>DD MMMM YYYY</option>
+            <option value="MMM DD, YYYY" {% if settings.date_format == 'MMM DD, YYYY' %}selected{% endif %}>MMM DD, YYYY</option>
+            <option value="DD MMM YYYY" {% if settings.date_format == 'DD MMM YYYY' %}selected{% endif %}>DD MMM YYYY</option>
+          </select>
+          <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-gray-700">
+              <strong>Preview:</strong> 
+              <span id="datePreview" class="text-blue-700 font-medium"><!-- Will be filled by JavaScript --></span>
+            </p>
+          </div>
         </div>
 
+        <!-- Email Notifications -->
         <div class="mb-4">
-            <label for="id_notifications" class="block text-gray-700 text-sm font-bold mb-2">Enable Email Notifications:</label>
-            <input type="checkbox" id="id_notifications" name="enable_notifications" class="mr-2 leading-tight" {% if settings.enable_notifications %}checked{% endif %}>
-            <span class="text-sm text-gray-600">Receive important updates via email.</span>
+          <div class="flex items-start">
+            <input type="checkbox" id="id_notifications" name="enable_notifications" class="mt-1 mr-3 w-5 h-5 text-teal-600 rounded focus:ring-2 focus:ring-teal-500" {% if settings.enable_notifications %}checked{% endif %}>
+            <div>
+              <label for="id_notifications" class="block text-gray-700 text-sm font-bold cursor-pointer">Enable Email Notifications</label>
+              <p class="text-sm text-gray-600 mt-1">Receive important updates and reminders via email.</p>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -134,9 +163,9 @@
         <div class="mb-4">
           <label for="id_workload_display" class="block text-gray-700 text-sm font-bold mb-2">Workload Display:</label>
           <select id="id_workload_display" name="workload_display" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            <option value="weekly" {% if settings.workload_display == 'weekly' %}selected{% endif %}>Weekly Hours</option>
-            <option value="monthly" {% if settings.workload_display == 'monthly' %}selected{% endif %}>Monthly Hours</option>
-            <option value="semester" {% if settings.workload_display == 'semester' %}selected{% endif %}>Per Semester</option>
+            <option value="weekly" {% if settings.workload_display == 'weekly' %}selected{% endif %}>📊 Weekly Hours</option>
+            <option value="monthly" {% if settings.workload_display == 'monthly' %}selected{% endif %}>📅 Monthly Hours</option>
+            <option value="semester" {% if settings.workload_display == 'semester' %}selected{% endif %}>🎓 Per Semester</option>
           </select>
         </div>
 
@@ -148,7 +177,7 @@
 
       <div class="flex items-center justify-start">
         <button type="submit" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200">
-          Save Changes
+          💾 Save Changes
         </button>
       </div>
     </form>
@@ -189,7 +218,40 @@
 // Store the default column order - THIS IS THE DEFAULT ORDER FOR RESET
 const DEFAULT_COLUMN_ORDER = ['date', 'subject', 'lecture_type', 'time_in', 'time_out', 'duration', 'source_file'];
 
+// Date format examples
+const DATE_FORMAT_EXAMPLES = {
+    'YYYY-MM-DD': '2026-01-10',
+    'MM/DD/YYYY': '01/10/2026',
+    'DD/MM/YYYY': '10/01/2026',
+    'DD-MM-YYYY': '10-01-2026',
+    'MMMM DD, YYYY': 'January 10, 2026',
+    'DD MMMM YYYY': '10 January 2026',
+    'MMM DD, YYYY': 'Jan 10, 2026',
+    'DD MMM YYYY': '10 Jan 2026'
+};
+
+// Update date preview
+function updateDatePreview(format) {
+    const preview = document.getElementById('datePreview');
+    if (preview && DATE_FORMAT_EXAMPLES[format]) {
+        preview.textContent = DATE_FORMAT_EXAMPLES[format];
+    }
+}
+
+// Preview theme (visual indication only, actual change on save)
+function previewTheme(theme) {
+    // You can add visual feedback here if desired
+    console.log('Theme selected:', theme);
+    // Note: Actual theme change happens after save
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date preview
+    const dateFormatSelect = document.getElementById('id_date_format');
+    if (dateFormatSelect) {
+        updateDatePreview(dateFormatSelect.value);
+    }
+    
     const columnList = document.getElementById('column-list');
     let draggedElement = null;
     let draggedIndex = null;

@@ -245,7 +245,7 @@
                           <div class="text-xs text-gray-500">{{ session.subject.subject_name|truncatechars:30 }}</div>
                         
                         {% elif column == 'date' %}
-                          <span class="text-gray-900">{{ session.date|date:"M d, Y" }}</span>
+                          <span class="text-gray-900">{{ session.formatted_date }}</span>
                         
                         {% elif column == 'duration' %}
                           <span class="font-semibold text-gray-900">{{ session.hours }}h {{ session.minutes_part }}m</span>
