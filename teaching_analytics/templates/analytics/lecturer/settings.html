@@ -11,7 +11,7 @@
   <div class="flex-1 ml-64 py-8 px-20">
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
 
-    <form method="post">
+    <form method="post" id="settings-form">
       {% csrf_token %} {# Django security feature #}
 
       <!-- General User Settings -->
@@ -27,7 +27,7 @@
         </div>
 
         <div class="mb-4">
-          <label for="id_date_format" class="block text-700 text-sm font-bold mb-2">Date Format:</label>
+          <label for="id_date_format" class="block text-gray-700 text-sm font-bold mb-2">Date Format:</label>
           <input type="text" id="id_date_format" name="date_format" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., YYYY-MM-DD" value="{{ settings.date_format }}">
         </div>
 
@@ -49,17 +49,70 @@
         </div>
 
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2">Default columns to display:</label>
-          <div class="flex flex-wrap gap-4">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-gray-700 text-sm font-bold">Default columns to display:</label>
+            <button 
+              type="button" 
+              onclick="resetColumnOrder()"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset to Default
+            </button>
+          </div>
+          <p class="text-sm text-gray-600 mb-3">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+            Drag and drop to reorder columns. Check/uncheck to show/hide.
+          </p>
+          
+          <!-- Sortable column list -->
+          <div id="column-list" class="space-y-2">
               {% with selected_columns_list=settings.default_columns|split:"," %}
+              {# First, render columns in saved order #}
+              {% for column in selected_columns_list %}
+                {% if column %}
+                <div class="column-item flex items-center p-3 bg-gray-50 border-2 border-gray-200 rounded-lg cursor-move hover:bg-gray-100 hover:border-gray-300 transition-all duration-200" data-column="{{ column }}">
+                    <!-- Drag Handle Icon -->
+                    <svg class="drag-handle w-5 h-5 text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                    
+                    <!-- Checkbox -->
+                    <input type="checkbox" name="default_columns" value="{{ column }}" class="form-checkbox h-4 w-4 text-teal-600 mr-3 cursor-pointer" checked>
+                    
+                    <!-- Column Name -->
+                    <span class="text-gray-700 font-medium flex-1">{{ column|capfirst }}</span>
+                    
+                    <!-- Hidden input to track order -->
+                    <input type="hidden" class="column-order" name="column_order" value="{{ column }}">
+                </div>
+                {% endif %}
+              {% endfor %}
+              
+              {# Then, render remaining columns that are not in the saved list #}
               {% for column in available_record_columns %}
-              <label class="inline-flex items-center">
-                  <input type="checkbox" name="default_columns" value="{{ column }}" class="form-checkbox" {% if column in selected_columns_list %}checked{% endif %}>
-                  <span class="ml-2 text-gray-700">{{ column|capfirst }}</span>
-              </label>
+                {% if column not in selected_columns_list %}
+                <div class="column-item flex items-center p-3 bg-gray-50 border-2 border-gray-200 rounded-lg cursor-move hover:bg-gray-100 hover:border-gray-300 transition-all duration-200" data-column="{{ column }}">
+                    <!-- Drag Handle Icon -->
+                    <svg class="drag-handle w-5 h-5 text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                    
+                    <!-- Checkbox -->
+                    <input type="checkbox" name="default_columns" value="{{ column }}" class="form-checkbox h-4 w-4 text-teal-600 mr-3 cursor-pointer">
+                    
+                    <!-- Column Name -->
+                    <span class="text-gray-700 font-medium flex-1">{{ column|capfirst }}</span>
+                    
+                    <!-- Hidden input to track order -->
+                    <input type="hidden" class="column-order" name="column_order" value="{{ column }}">
+                </div>
+                {% endif %}
               {% endfor %}
               {% endwith %}
-              {# Add more columns as needed #}
           </div>
         </div>
 
@@ -94,11 +147,195 @@
       </section>
 
       <div class="flex items-center justify-start">
-        <button type="submit" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        <button type="submit" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200">
           Save Changes
         </button>
       </div>
     </form>
   </div>
 </div>
+
+<style>
+/* Drag and Drop Styles */
+.column-item {
+    user-select: none;
+}
+
+.column-item.dragging {
+    opacity: 0.5;
+}
+
+.column-item.drag-over {
+    border-color: #0d9488 !important;
+    background-color: #f0fdfa !important;
+    transform: scale(1.02);
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Smooth transitions */
+.column-item {
+    transition: all 0.2s ease;
+}
+</style>
+
+<script>
+// Store the default column order - THIS IS THE DEFAULT ORDER FOR RESET
+const DEFAULT_COLUMN_ORDER = ['date', 'subject', 'lecture_type', 'time_in', 'time_out', 'duration', 'source_file'];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const columnList = document.getElementById('column-list');
+    let draggedElement = null;
+    let draggedIndex = null;
+
+    // Get all column items
+    const columnItems = columnList.querySelectorAll('.column-item');
+    
+    // Add drag event listeners to all column items
+    columnItems.forEach((item, index) => {
+        item.setAttribute('draggable', 'true');
+        
+        // Drag Start - when user starts dragging
+        item.addEventListener('dragstart', function(e) {
+            draggedElement = this;
+            draggedIndex = Array.from(columnList.children).indexOf(this);
+            this.classList.add('dragging');
+            this.style.opacity = '0.4';
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        });
+        
+        // Drag Over - when dragging over another element
+        item.addEventListener('dragover', function(e) {
+            if (e.preventDefault) {
+                e.preventDefault(); // Allows us to drop
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        });
+        
+        // Drag Enter - when entering another element
+        item.addEventListener('dragenter', function(e) {
+            if (this !== draggedElement) {
+                this.classList.add('drag-over');
+            }
+        });
+        
+        // Drag Leave - when leaving another element
+        item.addEventListener('dragleave', function(e) {
+            this.classList.remove('drag-over');
+        });
+        
+        // Drop - when dropping on another element
+        item.addEventListener('drop', function(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation(); // Stops some browsers from redirecting
+            }
+
+            // Don't do anything if dropping on the same item
+            if (draggedElement !== this) {
+                // Get all items as array
+                const allItems = Array.from(columnList.querySelectorAll('.column-item'));
+                const targetIndex = allItems.indexOf(this);
+
+                // Reorder the DOM elements
+                if (draggedIndex < targetIndex) {
+                    // Moving down - insert after target
+                    this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                } else {
+                    // Moving up - insert before target
+                    this.parentNode.insertBefore(draggedElement, this);
+                }
+
+                // Update the column order hidden inputs
+                updateColumnOrder();
+            }
+
+            this.classList.remove('drag-over');
+            return false;
+        });
+        
+        // Drag End - when drag operation ends
+        item.addEventListener('dragend', function(e) {
+            this.style.opacity = '1';
+            this.classList.remove('dragging');
+            
+            // Remove all drag-over classes
+            columnItems.forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        });
+    });
+
+    /**
+     * Update the hidden column_order inputs to reflect the new order
+     */
+    function updateColumnOrder() {
+        const items = columnList.querySelectorAll('.column-item');
+        items.forEach((item, index) => {
+            const hiddenInput = item.querySelector('.column-order');
+            const columnValue = item.getAttribute('data-column');
+            if (hiddenInput) {
+                hiddenInput.value = columnValue;
+            }
+        });
+        
+        console.log('Column order updated');
+    }
+
+    // Initialize order on page load
+    updateColumnOrder();
+    
+    // Optional: Log the order when form is submitted
+    document.getElementById('settings-form').addEventListener('submit', function(e) {
+        const order = Array.from(columnList.querySelectorAll('.column-item'))
+            .map(item => item.getAttribute('data-column'));
+        console.log('Submitting column order:', order);
+    });
+});
+
+/**
+ * Reset columns to default order
+ */
+function resetColumnOrder() {
+    if (!confirm('Reset column order to default? This will restore the original order and all columns will be checked.')) {
+        return;
+    }
+    
+    const columnList = document.getElementById('column-list');
+    
+    // Clear current list
+    columnList.innerHTML = '';
+    
+    // Recreate items in default order
+    DEFAULT_COLUMN_ORDER.forEach(column => {
+        const item = document.createElement('div');
+        item.className = 'column-item flex items-center p-3 bg-gray-50 border-2 border-gray-200 rounded-lg cursor-move hover:bg-gray-100 hover:border-gray-300 transition-all duration-200';
+        item.setAttribute('data-column', column);
+        item.setAttribute('draggable', 'true');
+        
+        item.innerHTML = `
+            <svg class="drag-handle w-5 h-5 text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+            </svg>
+            <input type="checkbox" name="default_columns" value="${column}" class="form-checkbox h-4 w-4 text-teal-600 mr-3 cursor-pointer" checked>
+            <span class="text-gray-700 font-medium flex-1">${column.charAt(0).toUpperCase() + column.slice(1)}</span>
+            <input type="hidden" class="column-order" name="column_order" value="${column}">
+        `;
+        
+        columnList.appendChild(item);
+    });
+    
+    // Reinitialize drag and drop
+    location.reload();
+}
+</script>
+
 {% endblock %}

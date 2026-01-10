@@ -468,14 +468,18 @@ function updateSelectedCount() {
   selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
 
   updateStats();
-  updateDownloadLinks();
 }
 
+// UPDATED: Fixed stats calculation to use data-hours from row with DEBUGGING
 function updateStats() {
   const checkboxes = document.querySelectorAll(".session-checkbox:checked");
   const count = checkboxes.length;
 
+  console.log("=== STATS UPDATE DEBUG ===");
+  console.log("Selected sessions:", count);
+
   if (count === 0) {
+    // Reset to original stats
     document.getElementById("statsTitleSessions").textContent =
       "Total Sessions";
     document.getElementById("statsTitleHours").textContent = "Total Hours";
@@ -488,92 +492,82 @@ function updateStats() {
     document.getElementById("statsValueAvg").textContent =
       DJANGO_DATA.originalStats.avgPerSession + "h";
   } else {
-    let totalMinutes = 0;
-    checkboxes.forEach((cb) => {
-      const minutes = parseInt(cb.getAttribute("data-minutes") || 0);
-      totalMinutes += minutes;
+    // Calculate total hours from data-hours attribute on rows
+    let totalHours = 0;
+    checkboxes.forEach((cb, index) => {
+      const row = cb.closest(".session-row");
+      if (row) {
+        const hoursAttr = row.getAttribute("data-hours");
+        const hours = parseFloat(hoursAttr) || 0;
+        console.log(
+          `  Session ${index + 1}: data-hours="${hoursAttr}" -> parsed=${hours}`
+        );
+        totalHours += hours;
+      } else {
+        console.warn(`  Session ${index + 1}: No .session-row found!`);
+      }
     });
 
-    const totalHours = (totalMinutes / 60).toFixed(2);
-    const avgPerSession = (totalMinutes / count / 60).toFixed(2);
+    console.log("Total hours calculated:", totalHours);
 
+    const avgPerSession = count > 0 ? totalHours / count : 0;
+    console.log("Average per session:", avgPerSession);
+
+    // Update stats cards with selected values
     document.getElementById("statsTitleSessions").textContent =
       "Selected Sessions";
     document.getElementById("statsTitleHours").textContent = "Selected Hours";
     document.getElementById("statsTitleAvg").textContent = "Avg (Selected)";
 
     document.getElementById("statsValueSessions").textContent = count;
-    document.getElementById("statsValueHours").textContent = totalHours + "h";
-    document.getElementById("statsValueAvg").textContent = avgPerSession + "h";
+    document.getElementById("statsValueHours").textContent =
+      totalHours.toFixed(2) + "h";
+    document.getElementById("statsValueAvg").textContent =
+      avgPerSession.toFixed(2) + "h";
   }
+
+  console.log("=== END STATS DEBUG ===");
 }
 
-function updateDownloadLinks() {
-  const selectedCheckboxes = document.querySelectorAll(
-    ".session-checkbox:checked"
-  );
-  const selectedCount = selectedCheckboxes.length;
-  const selectedIds = Array.from(selectedCheckboxes).map((cb) => cb.value);
-
-  const hasFilters = DJANGO_DATA.hasFilters;
-  const filterCount = DJANGO_DATA.filterCount;
+// Download records function - simplified for new UI
+function downloadRecords(format, scope) {
   const baseUrl = DJANGO_DATA.baseUrl;
+  let url = `${baseUrl}?format=${format}&scope=${scope}`;
 
-  let labelText = "All sessions";
-  let csvUrl, xlsxUrl, pdfUrl;
-
-  if (selectedCount > 0) {
-    labelText = `Selected (${selectedCount})`;
-    const sessionIdsParam = selectedIds
-      .map((id) => `session_ids=${id}`)
-      .join("&");
-    csvUrl = `${baseUrl}?format=csv&scope=selected&${sessionIdsParam}`;
-    xlsxUrl = `${baseUrl}?format=xlsx&scope=selected&${sessionIdsParam}`;
-    pdfUrl = `${baseUrl}?format=pdf&scope=selected&${sessionIdsParam}`;
-  } else if (hasFilters) {
-    labelText = `Filtered (${filterCount})`;
-
-    let filterParams = "";
-    if (DJANGO_DATA.filterParams.search) {
-      filterParams += `search=${encodeURIComponent(
-        DJANGO_DATA.filterParams.search
-      )}&`;
-    }
-    if (DJANGO_DATA.filterParams.subject) {
-      filterParams += `subject=${DJANGO_DATA.filterParams.subject}&`;
-    }
-    if (DJANGO_DATA.filterParams.dateFrom) {
-      filterParams += `date_from=${DJANGO_DATA.filterParams.dateFrom}&`;
-    }
-    if (DJANGO_DATA.filterParams.dateTo) {
-      filterParams += `date_to=${DJANGO_DATA.filterParams.dateTo}&`;
-    }
-    if (DJANGO_DATA.filterParams.timeFrom) {
-      filterParams += `time_from=${DJANGO_DATA.filterParams.timeFrom}&`;
-    }
-    if (DJANGO_DATA.filterParams.timeTo) {
-      filterParams += `time_to=${DJANGO_DATA.filterParams.timeTo}&`;
-    }
-
-    filterParams = filterParams.replace(/&$/, "");
-
-    csvUrl = `${baseUrl}?format=csv&scope=filtered&${filterParams}`;
-    xlsxUrl = `${baseUrl}?format=xlsx&scope=filtered&${filterParams}`;
-    pdfUrl = `${baseUrl}?format=pdf&scope=filtered&${filterParams}`;
-  } else {
-    labelText = "All sessions";
-    csvUrl = `${baseUrl}?format=csv&scope=all`;
-    xlsxUrl = `${baseUrl}?format=xlsx&scope=all`;
-    pdfUrl = `${baseUrl}?format=pdf&scope=all`;
+  // Add filter params if applicable
+  if (DJANGO_DATA.filterParams.search) {
+    url += `&search=${encodeURIComponent(DJANGO_DATA.filterParams.search)}`;
+  }
+  if (DJANGO_DATA.filterParams.subject) {
+    url += `&subject=${DJANGO_DATA.filterParams.subject}`;
+  }
+  if (DJANGO_DATA.filterParams.dateFrom) {
+    url += `&date_from=${DJANGO_DATA.filterParams.dateFrom}`;
+  }
+  if (DJANGO_DATA.filterParams.dateTo) {
+    url += `&date_to=${DJANGO_DATA.filterParams.dateTo}`;
+  }
+  if (DJANGO_DATA.filterParams.timeFrom) {
+    url += `&time_from=${DJANGO_DATA.filterParams.timeFrom}`;
+  }
+  if (DJANGO_DATA.filterParams.timeTo) {
+    url += `&time_to=${DJANGO_DATA.filterParams.timeTo}`;
   }
 
-  document.getElementById("csvLabel").textContent = labelText;
-  document.getElementById("xlsxLabel").textContent = labelText;
-  document.getElementById("pdfLabel").textContent = labelText;
+  // Add selected session IDs if scope is 'selected'
+  if (scope === "selected") {
+    const checkboxes = document.querySelectorAll(".session-checkbox:checked");
+    if (checkboxes.length === 0) {
+      alert("Please select sessions to download");
+      return;
+    }
+    checkboxes.forEach((checkbox) => {
+      url += `&session_ids=${checkbox.value}`;
+    });
+  }
 
-  document.getElementById("csvDownloadLink").href = csvUrl;
-  document.getElementById("xlsxDownloadLink").href = xlsxUrl;
-  document.getElementById("pdfDownloadLink").href = pdfUrl;
+  // Trigger download
+  window.location.href = url;
 }
 
 function bulkDeleteSessions() {
@@ -590,7 +584,7 @@ function bulkDeleteSessions() {
   ) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = '{% url "delete_sessions" %}';
+    form.action = "/delete-sessions/"; // Note: You'll need to use the actual URL here
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
@@ -618,7 +612,8 @@ function deleteSingleSession(sessionId) {
   if (confirm("Are you sure you want to delete this session?")) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = `{% url "delete_session" 0 %}`.replace("0", sessionId);
+    // Note: You'll need to construct the actual delete URL here
+    form.action = `/delete-session/${sessionId}/`;
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
@@ -797,8 +792,7 @@ document.addEventListener("DOMContentLoaded", function () {
     switchTab("sessions");
   }
 
-  // Initialize download links and stats
-  updateDownloadLinks();
+  // Initialize stats
   updateStats();
 
   // Check for empty files ONLY if triggered by parse action
@@ -807,4 +801,17 @@ document.addEventListener("DOMContentLoaded", function () {
       checkForEmptyFiles();
     }, 500);
   }
+
+  // DEBUG: Log all session rows on page load
+  console.log("=== PAGE LOAD DEBUG ===");
+  console.log(
+    "Total session rows:",
+    document.querySelectorAll(".session-row").length
+  );
+  document.querySelectorAll(".session-row").forEach((row, index) => {
+    const sessionId = row.getAttribute("data-session-id");
+    const hours = row.getAttribute("data-hours");
+    console.log(`  Row ${index + 1}: ID=${sessionId}, data-hours="${hours}"`);
+  });
+  console.log("=== END PAGE LOAD DEBUG ===");
 });

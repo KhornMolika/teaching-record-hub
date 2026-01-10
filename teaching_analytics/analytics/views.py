@@ -317,6 +317,7 @@ def workload(request):
     return render(request, 'analytics/lecturer/workload.html', context)
 
 
+# Replace the settings_view function in views.py with this updated version:
 @lecturer_required
 def settings_view(request):
     """
@@ -330,7 +331,82 @@ def settings_view(request):
 
     settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
 
-    # Define available columns for teaching records
+    # Define available columns for teaching records (this is the DEFAULT order)
+    # This is what the reset button will restore
+    available_record_columns = [
+        'date',
+        'subject', 
+        'lecture_type',
+        'time_in',
+        'time_out',
+        'duration', 
+        'source_file',
+    ]
+
+    if request.method == 'POST':
+        settings.theme = request.POST.get('theme', settings.theme)
+        settings.date_format = request.POST.get('date_format', settings.date_format)
+        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
+        
+        try:
+            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
+        except ValueError:
+            messages.error(request, "Invalid value for records per page.")
+        
+        # Handle default_columns WITH ORDER
+        # Get the order from column_order hidden inputs
+        column_order = request.POST.getlist('column_order')
+        # Get which columns are selected (checked)
+        selected_columns = request.POST.getlist('default_columns')
+        
+        # Keep only selected columns in the order they appear
+        ordered_selected_columns = [col for col in column_order if col in selected_columns]
+        
+        if ordered_selected_columns:
+            settings.default_columns = ",".join(ordered_selected_columns)
+        else:
+            # If no columns selected, keep at least one default
+            settings.default_columns = "date"
+
+        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
+        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
+        
+        try:
+            posted_workload_target = request.POST.get('workload_target')
+            if posted_workload_target is not None and posted_workload_target != '':
+                settings.workload_target = int(posted_workload_target)
+        except ValueError:
+            messages.error(request, "Invalid value for workload target. Please enter a number.")
+
+        settings.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('settings')
+
+    # Pass default column order as JSON for the reset button
+    import json
+    context = {
+        'settings': settings,
+        'available_record_columns': available_record_columns,
+        'default_column_order': json.dumps(available_record_columns),  # For reset button
+    }
+    return render(request, 'analytics/lecturer/settings.html', context)
+
+# Updated settings_view function with reset functionality and column ordering
+
+@lecturer_required
+def settings_view(request):
+    """
+    Display and handle updates for lecturer settings.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
+
+    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+
+    # Define available columns for teaching records (this is the DEFAULT order)
     available_record_columns = [
         'subject', 
         'date', 
@@ -351,39 +427,46 @@ def settings_view(request):
         except ValueError:
             messages.error(request, "Invalid value for records per page.")
         
-        # Handle default_columns (checkboxes)
+        # Handle default_columns WITH ORDER
+        # Get the order from column_order hidden inputs
+        column_order = request.POST.getlist('column_order')
+        # Get which columns are selected (checked)
         selected_columns = request.POST.getlist('default_columns')
-        if selected_columns:
-            settings.default_columns = ",".join(selected_columns)
+        
+        # Keep only selected columns in the order they appear
+        ordered_selected_columns = [col for col in column_order if col in selected_columns]
+        
+        if ordered_selected_columns:
+            settings.default_columns = ",".join(ordered_selected_columns)
         else:
-            settings.default_columns = "" # Or set a sensible default if no columns selected
+            # If no columns selected, keep at least one default
+            settings.default_columns = "date"
 
         settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
         settings.workload_display = request.POST.get('workload_display', settings.workload_display)
         
-        print(f"DEBUG: Raw workload_target from POST: {request.POST.get('workload_target')}")
         try:
             posted_workload_target = request.POST.get('workload_target')
             if posted_workload_target is not None and posted_workload_target != '':
                 settings.workload_target = int(posted_workload_target)
-            # If it's an empty string, the default will apply, or the existing value will be kept.
-            # If it's not provided in POST, settings.workload_target will keep its existing value as per the .get() default.
         except ValueError:
             messages.error(request, "Invalid value for workload target. Please enter a number.")
-        print(f"DEBUG: settings.workload_target after processing: {settings.workload_target}")
 
         settings.save()
         messages.success(request, "Settings updated successfully!")
-        return redirect('settings') # Redirect back to settings page
+        return redirect('settings')
 
+    # Pass default column order as JSON for the reset button
+    import json
     context = {
         'settings': settings,
-        'available_record_columns': available_record_columns, # Pass to template
+        'available_record_columns': available_record_columns,
+        'default_column_order': json.dumps(available_record_columns),  # For reset button
     }
     return render(request, 'analytics/lecturer/settings.html', context)
 
 
-# Lecturer - Teaching Records page
+# Updated teaching_records view to use ordered columns
 
 @login_required
 def teaching_records(request):
@@ -441,11 +524,10 @@ def teaching_records(request):
         except ValueError:
             pass
     
-    # Calculate statistics - recalculate from actual times
+    # Calculate statistics BEFORE adding calculated fields
     total_sessions = sessions_query.count()
     total_minutes = 0
     
-    # Recalculate total minutes from time_in/time_out for accurate stats
     for session in sessions_query:
         if session.time_in and session.time_out:
             time_in_dt = datetime.combine(session.date, session.time_in)
@@ -462,77 +544,89 @@ def teaching_records(request):
     total_hours = round(total_minutes / 60, 2) if total_minutes else 0
     avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
     
-    # Add hours field to each session with accurate calculation
+    # CRITICAL FIX: Convert QuerySet to list and add calculated fields
     sessions_list = []
     for session in sessions_query:
-        # Calculate hours from time_in and time_out if available
         if session.time_in and session.time_out:
-            # Convert times to datetime for calculation
             time_in_dt = datetime.combine(session.date, session.time_in)
             time_out_dt = datetime.combine(session.date, session.time_out)
             
-            # Handle cases where time_out is before time_in (crosses midnight)
             if time_out_dt < time_in_dt:
                 time_out_dt += timedelta(days=1)
             
             duration = time_out_dt - time_in_dt
             actual_minutes = int(duration.total_seconds() / 60)
             
-            # Calculate hours and remaining minutes
             hours_part = actual_minutes // 60
             minutes_part = actual_minutes % 60
             
+            # Set all the calculated fields
             session.hours = hours_part
             session.minutes_part = minutes_part
-            session.hours_decimal = round(actual_minutes / 60, 2)  # Keep decimal for sorting/stats
+            session.hours_decimal = round(actual_minutes / 60, 2)  # THIS IS CRITICAL
             session.actual_minutes = actual_minutes
+            
+            # DEBUG: Print to verify
+            print(f"DEBUG: Session {session.id} - hours_decimal set to: {session.hours_decimal}")
+            
         elif session.minutes:
-            # Fallback to stored minutes if time_in/time_out not available
             hours_part = session.minutes // 60
             minutes_part = session.minutes % 60
             
             session.hours = hours_part
             session.minutes_part = minutes_part
-            session.hours_decimal = round(session.minutes / 60, 2)
+            session.hours_decimal = round(session.minutes / 60, 2)  # THIS IS CRITICAL
             session.actual_minutes = session.minutes
+            
+            # DEBUG: Print to verify
+            print(f"DEBUG: Session {session.id} - hours_decimal set to: {session.hours_decimal}")
         else:
             session.hours = 0
             session.minutes_part = 0
-            session.hours_decimal = 0
+            session.hours_decimal = 0  # THIS IS CRITICAL
             session.actual_minutes = 0
+            
+            # DEBUG: Print to verify
+            print(f"DEBUG: Session {session.id} - hours_decimal set to: 0")
+        
         sessions_list.append(session)
     
-    # Pagination using records_per_page from settings
+    # CRITICAL: Paginate the LIST, not the QuerySet
+    print(f"DEBUG: Total sessions in list: {len(sessions_list)}")
+    print(f"DEBUG: First session hours_decimal (before pagination): {sessions_list[0].hours_decimal if sessions_list else 'NO SESSIONS'}")
+    
     paginator = Paginator(sessions_list, settings.records_per_page)
     page_number = request.GET.get('page', 1)
     sessions = paginator.get_page(page_number)
     
-    # Get all subjects for filter dropdown
+    # DEBUG: Check if hours_decimal survived pagination
+    if sessions:
+        first_session = sessions[0]
+        print(f"DEBUG: First session on page - ID: {first_session.id}, hours_decimal: {getattr(first_session, 'hours_decimal', 'MISSING')}")
+    
+    # Get all subjects for filter
     subjects = Subject.objects.filter(
         sessions__lecturer=lecturer
     ).distinct().order_by('subject_code')
     
-    # Get all files for files tab with annotated session count
-    # FIXED: Use sessions_count for annotation, don't try to assign to property
+    # Get all files
     files_list = TeachingFile.objects.filter(
         lecturer=lecturer
     ).annotate(
         sessions_count=Count('sessions')
     ).order_by('-upload_date')
     
-    # Add parsed status (removed problematic session_count assignment)
     files_with_data = []
     for file in files_list:
-        # FIXED: Just set is_parsed, don't copy sessions_count to session_count
         file.is_parsed = file.sessions_count > 0 or bool(file.semester)
         files_with_data.append(file)
     
-    # Calculate file statistics
+    # File statistics
     total_files = len(files_with_data)
     parsed_files = sum(1 for f in files_with_data if f.is_parsed)
     pending_files = total_files - parsed_files
     
-    # Build filter params for pagination links
+    # Build filter params
     filter_params = ''
     if search_query:
         filter_params += f'&search={search_query}'
@@ -549,10 +643,8 @@ def teaching_records(request):
     
     search_param = f'&search={search_query}' if search_query else ''
     
-    # Define available columns for the teaching records table display
-    available_table_columns = [
-        'date', 'subject', 'lecture_type', 'time_in', 'time_out', 'duration', 'source_file'
-    ]
+    # Get ordered columns from settings
+    ordered_columns = settings.default_columns.split(',') if settings.default_columns else []
     
     context = {
         'sessions': sessions,
@@ -576,8 +668,8 @@ def teaching_records(request):
             'parsed': parsed_files,
             'pending': pending_files,
         },
-        'settings': settings, # Pass settings to template
-        'available_table_columns': available_table_columns, # Pass to template
+        'settings': settings,
+        'ordered_columns': ordered_columns,
     }
     
     return render(request, 'analytics/lecturer/teaching_records.html', context)

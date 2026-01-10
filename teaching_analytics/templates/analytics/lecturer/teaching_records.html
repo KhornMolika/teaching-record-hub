@@ -58,8 +58,315 @@
         </div>
       </div>
 
-      <!-- Teaching Sessions Table -->
-      {% include "components/_teaching_records_table.html" %}
+      <!-- Teaching Sessions Table - UPDATED WITH DYNAMIC COLUMNS -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="p-6">
+          <!-- Table Controls -->
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex gap-3">
+              <!-- Search -->
+              <form method="get" action="{% url 'teaching_records' %}" class="flex gap-2">
+                <div class="relative">
+                  <input
+                    type="text"
+                    name="search"
+                    value="{{ search_query }}"
+                    placeholder="Search by subject..."
+                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  />
+                  <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                  Search
+                </button>
+              </form>
+
+              <!-- Filter Button -->
+              <button
+                onclick="document.getElementById('filterModal').classList.remove('hidden')"
+                class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="text-sm font-medium">Filter</span>
+              </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+              <!-- Bulk Delete Button (hidden by default) -->
+              <button
+                id="bulkDeleteBtn"
+                onclick="bulkDeleteSessions()"
+                style="display: none;"
+                class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span class="text-sm font-medium">Delete Selected</span>
+              </button>
+
+              <!-- Download Dropdown - IMPROVED UI -->
+              <div class="relative" x-data="{ open: false }">
+                <button
+                  @click="open = !open"
+                  class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span class="text-sm font-medium">Download</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div
+                  x-show="open"
+                  @click.away="open = false"
+                  x-cloak
+                  class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                  
+                  <!-- Download Selected Sessions -->
+                  <div class="px-3 py-2 border-b border-gray-100">
+                    <p class="text-xs font-semibold text-gray-500 uppercase">Selected Sessions</p>
+                  </div>
+                  <button 
+                    onclick="downloadRecords('csv', 'selected'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3"
+                    id="downloadSelectedCsv">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">CSV (Excel)</div>
+                      <div class="text-xs text-gray-500">Download selected as CSV</div>
+                    </div>
+                  </button>
+                  <button 
+                    onclick="downloadRecords('xlsx', 'selected'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3"
+                    id="downloadSelectedXlsx">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">Excel (XLSX)</div>
+                      <div class="text-xs text-gray-500">Download selected as Excel</div>
+                    </div>
+                  </button>
+                  <button 
+                    onclick="downloadRecords('pdf', 'selected'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3"
+                    id="downloadSelectedPdf">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">PDF Document</div>
+                      <div class="text-xs text-gray-500">Download selected as PDF</div>
+                    </div>
+                  </button>
+
+                  <!-- Divider -->
+                  <div class="my-2 border-t border-gray-100"></div>
+
+                  <!-- Download All Sessions -->
+                  <div class="px-3 py-2 border-b border-gray-100">
+                    <p class="text-xs font-semibold text-gray-500 uppercase">All Sessions</p>
+                  </div>
+                  <button 
+                    onclick="downloadRecords('csv', 'all'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">CSV (Excel)</div>
+                      <div class="text-xs text-gray-500">Download all sessions</div>
+                    </div>
+                  </button>
+                  <button 
+                    onclick="downloadRecords('xlsx', 'all'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">Excel (XLSX)</div>
+                      <div class="text-xs text-gray-500">Download all sessions</div>
+                    </div>
+                  </button>
+                  <button 
+                    onclick="downloadRecords('pdf', 'all'); return false;" 
+                    class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">PDF Document</div>
+                      <div class="text-xs text-gray-500">Download all sessions</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b-2 border-gray-200">
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                    <div class="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="selectAll" 
+                        onchange="toggleSelectAll(this)"
+                        class="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                      >
+                      <span id="selectedCount" class="text-xs text-teal-600 font-semibold" style="display: none;">
+                        (<span id="selectedNumber">0</span> selected)
+                      </span>
+                    </div>
+                  </th>
+                  <!-- DYNAMIC HEADERS based on ordered_columns -->
+                  {% for column in ordered_columns %}
+                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      {% if column == 'subject' %}Subject
+                      {% elif column == 'date' %}Date
+                      {% elif column == 'duration' %}Duration
+                      {% elif column == 'lecture_type' %}Lecture Type
+                      {% elif column == 'time_in' %}Time In
+                      {% elif column == 'time_out' %}Time Out
+                      {% elif column == 'source_file' %}Source File
+                      {% else %}{{ column|capfirst }}
+                      {% endif %}
+                    </th>
+                  {% endfor %}
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if sessions %}
+                  {% for session in sessions %}
+                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition session-row" 
+                      data-session-id="{{ session.id }}"
+                      data-hours="{{ session.hours_decimal }}">
+                    <td class="py-4 px-4">
+                      <input 
+                        type="checkbox" 
+                        class="session-checkbox w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        value="{{ session.id }}"
+                        onchange="updateSelectedCount()"
+                      >
+                    </td>
+                    
+                    <!-- DYNAMIC COLUMNS based on ordered_columns -->
+                    {% for column in ordered_columns %}
+                      <td class="py-4 px-4 text-sm">
+                        {% if column == 'subject' %}
+                          <div class="font-medium text-gray-900">{{ session.subject.subject_code }}</div>
+                          <div class="text-xs text-gray-500">{{ session.subject.subject_name|truncatechars:30 }}</div>
+                        
+                        {% elif column == 'date' %}
+                          <span class="text-gray-900">{{ session.date|date:"M d, Y" }}</span>
+                        
+                        {% elif column == 'duration' %}
+                          <span class="font-semibold text-gray-900">{{ session.hours }}h {{ session.minutes_part }}m</span>
+                        
+                        {% elif column == 'lecture_type' %}
+                          {% if session.lecture_type %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {{ session.lecture_type|truncatechars:20 }}
+                            </span>
+                          {% else %}
+                            <span class="text-gray-400">-</span>
+                          {% endif %}
+                        
+                        {% elif column == 'time_in' %}
+                          {% if session.time_in %}
+                            <span class="text-gray-900">{{ session.time_in|time:"H:i" }}</span>
+                          {% else %}
+                            <span class="text-gray-400">-</span>
+                          {% endif %}
+                        
+                        {% elif column == 'time_out' %}
+                          {% if session.time_out %}
+                            <span class="text-gray-900">{{ session.time_out|time:"H:i" }}</span>
+                          {% else %}
+                            <span class="text-gray-400">-</span>
+                          {% endif %}
+                        
+                        {% elif column == 'source_file' %}
+                          {% if session.teaching_file %}
+                            <span class="text-xs text-gray-600">{{ session.teaching_file.file_name.name|truncatechars:25 }}</span>
+                          {% else %}
+                            <span class="text-gray-400">-</span>
+                          {% endif %}
+                        
+                        {% endif %}
+                      </td>
+                    {% endfor %}
+                    
+                    <td class="py-4 px-4">
+                      <div class="flex items-center justify-center gap-2">
+                        <form method="post" action="{% url 'delete_session' session.id %}" class="inline" onsubmit="return confirm('Delete this session?')">
+                          {% csrf_token %}
+                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="{{ ordered_columns|length|add:2 }}" class="py-12 text-center text-gray-500">
+                      <div class="flex flex-col items-center gap-3">
+                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-lg font-medium">No teaching sessions found</p>
+                        <p class="text-sm">Try adjusting your filters or upload new teaching files</p>
+                      </div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if sessions.has_other_pages %}
+          <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+            <div class="text-sm text-gray-600">
+              Showing {{ sessions.start_index }} to {{ sessions.end_index }} of {{ sessions.paginator.count }} sessions
+            </div>
+            <div class="flex gap-2">
+              {% if sessions.has_previous %}
+                <a href="?page=1{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">First</a>
+                <a href="?page={{ sessions.previous_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Previous</a>
+              {% endif %}
+
+              <span class="px-4 py-2 bg-teal-600 text-white rounded-lg">
+                {{ sessions.number }}
+              </span>
+
+              {% if sessions.has_next %}
+                <a href="?page={{ sessions.next_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
+                <a href="?page={{ sessions.paginator.num_pages }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Last</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
     <!-- Files Tab Content -->

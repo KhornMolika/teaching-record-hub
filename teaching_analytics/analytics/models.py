@@ -31,11 +31,13 @@ class LecturerSettings(models.Model):
     enable_notifications = models.BooleanField(default=True)
     records_per_page = models.PositiveSmallIntegerField(default=10)
     
-    # Store as comma-separated string for simplicity, or JSONField for complexity
+    # UPDATED: Changed default order to match your requirement
     default_columns = models.CharField(
-        max_length=255, default='subject,date,duration,lecture_type',
+        max_length=255, 
+        default='date,subject,lecture_type,time_in,time_out,duration,source_file',
         help_text="Comma-separated list of default columns for teaching records table"
     )
+    
     default_sort_order = models.CharField(
         max_length=50, default='-date',
         help_text="Default sort order for teaching records (e.g., -date, subject__name)"
