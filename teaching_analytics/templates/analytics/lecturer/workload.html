@@ -9,11 +9,11 @@
   <!-- Main Content with left margin -->
   <div class="flex-1 ml-64 py-8 px-20">
     <!-- Header -->
-    <div class="mb-8">
+    <div class="mb-8" data-aos="fade-down">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
         In-Depth Workload Analysis
       </h1>
-      <p class="text-gray-500 dark:text-gray-400 mt-1">
+      <p class="text-gray-500 dark:text-gray-400 mt-1" data-aos="fade-down" data-aos-delay="100">
         A detailed look at your teaching patterns.
       </p>
     </div>
@@ -22,7 +22,7 @@
     {% if is_overload %}
     <div class="bg-red-50 dark:bg-red-900/30
                 border border-red-200 dark:border-red-700
-                rounded-xl p-4 mb-8 flex items-start gap-3">
+                rounded-xl p-4 mb-8 flex items-start gap-3" data-aos="fade-in" data-aos-delay="200">
       <div class="flex-shrink-0">
         <svg class="w-6 h-6 text-red-600 dark:text-red-400"
              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +55,7 @@
     <div class="grid grid-cols-2 gap-6 mb-8">
       <!-- Dynamic Breakdown Chart -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                  border border-gray-100 dark:border-gray-700">
+                  border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="300">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
           {% if workload_display_type == 'weekly' %}Weekly Hours Breakdown
           {% elif workload_display_type == 'monthly' %}Monthly Hours Breakdown
@@ -69,7 +69,7 @@
 
       <!-- Peak Hours -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                  border border-gray-100 dark:border-gray-700">
+                  border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="400">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
           Peak Teaching Hours
         </h2>
@@ -81,7 +81,7 @@
 
     <!-- Subject Deep Dive Table -->
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                border border-gray-100 dark:border-gray-700">
+                border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="500">
       <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
         Subject Deep Dive
       </h2>

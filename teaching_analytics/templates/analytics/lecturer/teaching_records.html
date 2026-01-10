@@ -9,13 +9,13 @@
   <!-- Main Content with left margin -->
  <div class="flex-1 ml-64 py-8 px-20 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <!-- Header - Animated -->
-    <div class="mb-8 animate-fade-in-down">
+    <div class="mb-8" data-aos="fade-down">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">My Teaching Records</h1>
       <p class="text-gray-500 dark:text-gray-400 mt-1">View and track your teaching sessions</p>
     </div>
 
     <!-- Tabs - Animated -->
-    <div class="mb-6 border-b border-gray-200 dark:border-gray-700 animate-fade-in-up animation-delay-100">
+    <div class="mb-6 border-b border-gray-200 dark:border-gray-700" data-aos="fade-up">
       <nav class="flex gap-8">
         <button 
           onclick="switchTab('sessions')" 
@@ -41,33 +41,33 @@
       <!-- Stats Cards - Animated with stagger -->
       <div class="grid grid-cols-3 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 
-                    animate-fade-in-up animation-delay-200 hover:shadow-lg hover:scale-105 transition-all duration-300">
+                    hover:shadow-lg hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="100">
           <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleSessions">Total Sessions</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100 animate-count-up" id="statsValueSessions">{{ stats.total_sessions }}</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueSessions">{{ stats.total_sessions }}</div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 
-                    animate-fade-in-up animation-delay-300 hover:shadow-lg hover:scale-105 transition-all duration-300">
+                    hover:shadow-lg hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="200">
           <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleHours">Total Hours</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100 animate-count-up" id="statsValueHours">{{ stats.total_hours }}h</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueHours">{{ stats.total_hours }}h</div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 
-                    animate-fade-in-up animation-delay-400 hover:shadow-lg hover:scale-105 transition-all duration-300">
+                    hover:shadow-lg hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="300">
           <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleAvg">Avg per Session</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100 animate-count-up" id="statsValueAvg">{{ stats.avg_per_session }}h</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueAvg">{{ stats.avg_per_session }}h</div>
         </div>
       </div>
 
       <!-- Teaching Sessions Table - Animated -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 
-                  animate-fade-in-up animation-delay-500">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700" 
+                  data-aos="fade-up" data-aos-delay="400">
         <div class="p-6">
           <!-- Table Controls -->
           <div class="flex justify-between items-center mb-6">
@@ -119,7 +119,7 @@
                 <!-- Active Indicator Dot (appears when filters are active) -->
                 {% if selected_subject or date_from or date_to or time_from or time_to %}
                 <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                  <span class="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
                 </span>
                 {% endif %}
@@ -228,7 +228,7 @@
                         class="w-4 h-4 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 
                                rounded focus:ring-2 focus:ring-teal-500 cursor-pointer transition-all duration-200 hover:scale-110"
                       >
-                      <span id="selectedCount" class="text-xs text-teal-600 dark:text-teal-400 font-semibold animate-fade-in" style="display: none;">
+                      <span id="selectedCount" class="text-xs text-teal-600 dark:text-teal-400 font-semibold" style="display: none;">
                         (<span id="selectedNumber">0</span> selected)
                       </span>
                     </div>
@@ -254,10 +254,9 @@
                 {% if sessions %}
                   {% for session in sessions %}
                   <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 
-                            transition-all duration-300 session-row animate-fade-in-up" 
+                            transition-all duration-300 session-row" 
                       data-session-id="{{ session.id }}"
-                      data-hours="{{ session.hours_decimal }}"
-                      style="animation-delay: {{ forloop.counter0|divisibleby:10|yesno:'0,0.05,0.1,0.15,0.2' }}s">
+                      data-hours="{{ session.hours_decimal }}">
                     <td class="py-4 px-4">
                       <input 
                         type="checkbox" 
@@ -335,8 +334,8 @@
                 {% else %}
                   <tr>
                     <td colspan="{{ ordered_columns|length|add:2 }}" class="py-12 text-center text-gray-500 dark:text-gray-400">
-                      <div class="flex flex-col items-center gap-3 animate-fade-in">
-                        <svg class="w-16 h-16 text-gray-300 dark:text-gray-600 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div class="flex flex-col items-center gap-3">
+                        <svg class="w-16 h-16 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p class="text-lg font-medium">No teaching sessions found</p>
@@ -365,7 +364,7 @@
                           rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-105">Previous</a>
               {% endif %}
 
-              <span class="px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg animate-pulse-slow">
+              <span class="px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg">
                 {{ sessions.number }}
               </span>
 
@@ -385,9 +384,7 @@
     </div>
 
     <!-- Files Tab Content -->
-    <div id="filesContent" class="hidden">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 
-                  animate-fade-in-up animation-delay-200">
+    <div id="filesContent" class="hidden" data-aos="fade-up" data-aos-delay="100">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Uploaded Files</h2>
@@ -405,24 +402,24 @@
           <!-- File Statistics -->
           <div class="grid grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 
-                        animate-slide-in-left hover:scale-105 transition-all duration-300">
+                        hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="200">
               <div class="text-sm text-blue-600 dark:text-blue-400 mb-1">Total Files</div>
               <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ file_stats.total }}</div>
             </div>
             <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800 
-                        animate-fade-in-up animation-delay-100 hover:scale-105 transition-all duration-300">
+                        hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="300">
               <div class="text-sm text-green-600 dark:text-green-400 mb-1">Parsed Files</div>
               <div class="text-2xl font-bold text-green-900 dark:text-green-300">{{ file_stats.parsed }}</div>
             </div>
             <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800 
-                        animate-slide-in-right hover:scale-105 transition-all duration-300">
+                        hover:scale-105 transition-all duration-300" data-aos="fade-up" data-aos-delay="400">
               <div class="text-sm text-yellow-600 dark:text-yellow-400 mb-1">Pending Files</div>
               <div class="text-2xl font-bold text-yellow-900 dark:text-yellow-300">{{ file_stats.pending }}</div>
             </div>
           </div>
 
           <!-- Files Table -->
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto" data-aos="fade-up" data-aos-delay="500">
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-700">
@@ -464,9 +461,8 @@
                 {% if files %}
                   {% for file in files %}
                   <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 
-                            transition-all duration-300 animate-fade-in-up" 
-                      data-file-id="{{ file.id }}"
-                      style="animation-delay: {{ forloop.counter0|divisibleby:10|yesno:'0,0.05,0.1,0.15,0.2' }}s">
+                            transition-all duration-300" 
+                      data-file-id="{{ file.id }}">
                     <td class="py-4 px-4">
                       <div class="flex items-center gap-3">
                         <input 
@@ -552,8 +548,8 @@
                 {% else %}
                   <tr>
                     <td colspan="6" class="py-8 text-center text-gray-500 dark:text-gray-400">
-                      <div class="flex flex-col items-center gap-2 animate-fade-in">
-                        <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div class="flex flex-col items-center gap-2">
+                        <svg class="w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         <p class="text-lg font-medium">No files uploaded yet</p>
@@ -573,7 +569,7 @@
 
 <!-- Filter Modal -->
 <div id="filterModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4 animate-modal-appear">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">🔍 Filter Sessions</h2>
       <button onclick="document.getElementById('filterModal').classList.add('hidden')" 
@@ -694,7 +690,7 @@
 
 <!-- Upload Modal -->
 <div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto animate-modal-appear">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">📁 Upload Teaching Files</h2>
       <button onclick="closeUploadModal()" 
@@ -727,7 +723,7 @@
             class="hidden" 
             onchange="handleFileSelection(event)"
           >
-          <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <p class="text-gray-600 dark:text-gray-300 mb-2">Click to browse or drag and drop</p>
@@ -786,10 +782,10 @@
 
 <!-- No Data Found Modal (only shown when parsing returns 0 sessions) -->
 <div id="noDataModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-lg w-full mx-4 animate-modal-appear">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-lg w-full mx-4">
     <div class="flex items-start gap-4 mb-6">
       <div class="flex-shrink-0">
-        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/40 rounded-full flex items-center justify-center animate-pulse">
+        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/40 rounded-full flex items-center justify-center">
           <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -885,144 +881,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
   [x-cloak] { display: none !important; }
-  
-  /* Custom Animations */
-  @keyframes fadeInDown {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  @keyframes modalAppear {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  @keyframes bounceSlow {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-  
-  @keyframes pulseSlow {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
-  }
-  
-  /* Animation Classes */
-  .animate-fade-in-down {
-    animation: fadeInDown 0.6s ease-out;
-  }
-  
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-    animation-fill-mode: both;
-  }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-  
-  .animate-slide-in-left {
-    animation: slideInLeft 0.6s ease-out;
-  }
-  
-  .animate-slide-in-right {
-    animation: slideInRight 0.6s ease-out;
-  }
-  
-  .animate-modal-appear {
-    animation: modalAppear 0.3s ease-out;
-  }
-  
-  .animate-bounce-slow {
-    animation: bounceSlow 2s ease-in-out infinite;
-  }
-  
-  .animate-pulse-slow {
-    animation: pulseSlow 3s ease-in-out infinite;
-  }
-  
-  /* Animation Delays */
-  .animation-delay-100 {
-    animation-delay: 0.1s;
-  }
-  
-  .animation-delay-200 {
-    animation-delay: 0.2s;
-  }
-  
-  .animation-delay-300 {
-    animation-delay: 0.3s;
-  }
-  
-  .animation-delay-400 {
-    animation-delay: 0.4s;
-  }
-  
-  .animation-delay-500 {
-    animation-delay: 0.5s;
-  }
 </style>
 
 {% endblock %}
