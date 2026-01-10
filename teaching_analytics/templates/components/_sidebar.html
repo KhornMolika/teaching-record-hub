@@ -1,12 +1,12 @@
 <!-- Sidebar Component -->
 <div
-  class="w-64 bg-gradient-to-b from-teal-400 to-teal-600 text-white flex flex-col fixed h-screen"
+  class="w-64 bg-gradient-to-b from-teal-400 to-teal-600 dark:from-gray-800 dark:to-gray-900 text-white flex flex-col fixed h-screen border-r border-teal-500/20 dark:border-gray-700"
 >
   <!-- Logo -->
   <div class="p-6">
     <div class="flex items-center gap-3">
       <div
-        class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center"
+        class="w-10 h-10 bg-white/20 dark:bg-teal-600/30 rounded-lg flex items-center justify-center"
       >
         <svg
           class="w-6 h-6"
@@ -24,16 +24,20 @@
       </div>
       <div>
         <div class="font-bold">Lecturer Portal</div>
-        <div class="text-xs text-teal-100">Workload Tracker</div>
+        <div class="text-xs text-teal-100 dark:text-gray-400">
+          Workload Tracker
+        </div>
       </div>
     </div>
   </div>
 
   <!-- User Info -->
-  <div class="px-6 py-4 bg-white/10 mx-4 rounded-lg mb-6">
+  <div
+    class="px-6 py-4 bg-white/10 dark:bg-gray-700/50 mx-4 rounded-lg mb-6 border border-white/10 dark:border-gray-600"
+  >
     <div class="flex items-center gap-3">
       <div
-        class="w-10 h-10 min-w-10 bg-teal-300 min-h-10 rounded-full flex items-center justify-center"
+        class="w-10 h-10 min-w-10 bg-teal-300 dark:bg-teal-600 min-h-10 rounded-full flex items-center justify-center text-teal-900 dark:text-white font-bold"
       >
         {% if request.user.full_name %} {{ request.user.full_name|first|upper }}
         {% else %} {{ request.user.username|first|upper }} {% endif %}
@@ -43,7 +47,7 @@
           {% if request.user.get_full_name %} {{ request.user.get_full_name }}
           {% else %} {{ request.user.username }} {% endif %}
         </div>
-        <div class="text-xs text-teal-100">
+        <div class="text-xs text-teal-100 dark:text-gray-400">
           {% if request.user.email %} {{ request.user.email }} {% else %}
           Computer Science {% endif %}
         </div>
@@ -55,7 +59,7 @@
   <nav class="flex-1 px-4 overflow-y-auto">
     <a
       href="{% url 'home' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'home' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'home' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -72,9 +76,10 @@
       </svg>
       My Dashboard
     </a>
+
     <a
       href="{% url 'teaching_records' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'teaching_records' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'teaching_records' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -91,9 +96,10 @@
       </svg>
       My Teaching Records
     </a>
+
     <a
       href="{% url 'workload' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'workload' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'workload' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -113,10 +119,10 @@
   </nav>
 
   <!-- Bottom Navigation -->
-  <div class="px-4 pb-6">
+  <div class="px-4 pb-6 border-t border-white/10 dark:border-gray-700 pt-4">
     <a
       href="{% url 'settings' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 transition"
     >
       <svg
         class="w-5 h-5"
@@ -139,9 +145,10 @@
       </svg>
       Settings
     </a>
+
     <a
       href="{% url 'logout' %}"
-      class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg transition"
+      class="flex items-center gap-3 px-4 py-3 text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-red-900/30 hover:text-white dark:hover:text-red-400 rounded-lg transition"
       onclick="return confirm('Are you sure you want to sign out?');"
     >
       <svg

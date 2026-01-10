@@ -38,3 +38,17 @@ def get_python_date_format(format_string):
         'DD MMM YYYY': '%d %b %Y'
     }
     return format_map.get(format_string, '%Y-%m-%d')
+
+
+def get_user_settings(request):
+    """Get user settings - helper function"""
+    from analytics.models import LecturerSettings, Lecturer
+    
+    if request.user.is_authenticated and not request.user.is_staff:
+        try:
+            lecturer = Lecturer.objects.get(user=request.user)
+            settings, _ = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+            return settings
+        except Lecturer.DoesNotExist:
+            pass
+    return None

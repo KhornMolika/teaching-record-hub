@@ -11,8 +11,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
 import csv
 from .serializers import TeachingSessionSerializer # Import TeachingSessionSerializer
-from .utils import format_date, get_python_date_format
+from .utils import format_date, get_python_date_format,get_user_settings
 
+def some_view(request):
+    settings = get_user_settings(request)
+    context = {
+        'settings': settings
+    }
+    return render(request, 'template.html', context)
 
 # Custom decorators for role-based access control
 def admin_required(view_func):

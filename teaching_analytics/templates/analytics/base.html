@@ -1,15 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="theme-transition">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Workload Management System{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Theme Configuration - RUNS IN BROWSER -->
+    <script>
+      (function () {
+        const theme = '{{ settings.theme|default:"light" }}'; // ← Gets value from Python
+
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else if (theme === "auto") {
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.classList.add("dark");
+          }
+        }
+      })();
+    </script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+
+    <style>
+      .theme-transition * {
+        transition: background-color 0.3s ease, color 0.3s ease,
+          border-color 0.3s ease;
+      }
+    </style>
+
     {% block extra_css %}{% endblock %}
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body
+    class="bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100"
+  >
     {% block content %} {% endblock %} {% block extra_js %} {% endblock %}
   </body>
 </html>
