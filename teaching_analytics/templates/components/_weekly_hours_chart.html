@@ -1,11 +1,18 @@
 <!-- Weekly Hours Chart -->
-<div class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-  <h2 class="text-xl font-bold text-gray-900 mb-6">My Weekly Hours</h2>
+<div
+  class="col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
+>
+  <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+    My Weekly Hours
+  </h2>
+
   {% if weekly_hours_chart_data %}
-    <div class="h-64">
-      <canvas id="weeklyHoursChart"></canvas>
-    </div>
+  <div class="h-64">
+    <canvas id="weeklyHoursChart"></canvas>
+  </div>
   {% else %}
-    <div class="text-center text-gray-500 py-12">No weekly data to display yet.</div>
+  <div class="text-center text-gray-500 dark:text-gray-400 py-12">
+    No weekly data to display yet.
+  </div>
   {% endif %}
 </div>
