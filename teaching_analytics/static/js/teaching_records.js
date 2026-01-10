@@ -468,6 +468,7 @@ function updateSelectedCount() {
   selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
 
   updateStats();
+  updateDownloadButtonText(); // Update download text when selection changes
 }
 
 // UPDATED: Fixed stats calculation to use data-hours from row with DEBUGGING
@@ -570,6 +571,34 @@ function downloadRecords(format, scope) {
   window.location.href = url;
 }
 
+// NEW: Auto-detect whether to download selected or all sessions
+function downloadRecordsAuto(format) {
+  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
+  const scope = checkboxes.length > 0 ? 'selected' : 'all';
+  downloadRecords(format, scope);
+}
+
+// NEW: Update download button descriptions based on selection
+function updateDownloadButtonText() {
+  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
+  const count = checkboxes.length;
+  
+  const csvText = document.getElementById('csv-scope-text');
+  const xlsxText = document.getElementById('xlsx-scope-text');
+  const pdfText = document.getElementById('pdf-scope-text');
+  
+  if (count > 0) {
+    const text = `Download ${count} selected session${count !== 1 ? 's' : ''}`;
+    if (csvText) csvText.textContent = text;
+    if (xlsxText) xlsxText.textContent = text;
+    if (pdfText) pdfText.textContent = text;
+  } else {
+    if (csvText) csvText.textContent = 'Download all sessions';
+    if (xlsxText) xlsxText.textContent = 'Download all sessions';
+    if (pdfText) pdfText.textContent = 'Download all sessions';
+  }
+}
+
 function bulkDeleteSessions() {
   const checkboxes = document.querySelectorAll(".session-checkbox:checked");
   const sessionIds = Array.from(checkboxes).map((cb) => cb.value);
@@ -584,7 +613,7 @@ function bulkDeleteSessions() {
   ) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = "/delete-sessions/"; // Note: You'll need to use the actual URL here
+    form.action = "/delete-sessions/";
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
@@ -612,7 +641,6 @@ function deleteSingleSession(sessionId) {
   if (confirm("Are you sure you want to delete this session?")) {
     const form = document.createElement("form");
     form.method = "POST";
-    // Note: You'll need to construct the actual delete URL here
     form.action = `/delete-session/${sessionId}/`;
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
@@ -792,8 +820,9 @@ document.addEventListener("DOMContentLoaded", function () {
     switchTab("sessions");
   }
 
-  // Initialize stats
+  // Initialize stats and download button text
   updateStats();
+  updateDownloadButtonText();
 
   // Check for empty files ONLY if triggered by parse action
   if (DJANGO_DATA.checkEmptyFiles) {
