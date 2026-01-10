@@ -2,64 +2,68 @@
 {% block title %}My Teaching Records{% endblock %}
 
 {% block content %}
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
   <!-- Include Sidebar -->
   {% include "components/_sidebar.html" %}
 
   <!-- Main Content with left margin -->
-  <div class="flex-1 ml-64 py-8 px-20">
+ <div class="flex-1 ml-64 py-8 px-20 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">My Teaching Records</h1>
-      <p class="text-gray-500 mt-1">View and track your teaching sessions</p>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">My Teaching Records</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">View and track your teaching sessions</p>
     </div>
 
     <!-- Tabs -->
-    <div class="mb-6 border-b border-gray-200">
+    <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
       <nav class="flex gap-8">
         <button 
           onclick="switchTab('sessions')" 
           id="sessionsTab"
-          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition border-teal-600 text-teal-600">
+          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition 
+                border-teal-600 text-teal-600 dark:text-teal-400 dark:border-teal-400">
           📚 Teaching Sessions
         </button>
         <button 
           onclick="switchTab('files')" 
           id="filesTab"
-          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          class="tab-button py-4 px-1 border-b-2 font-medium text-sm transition 
+                border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300
+                dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500">
           📁 Uploaded Files
         </button>
       </nav>
     </div>
 
+
     <!-- Sessions Tab Content -->
     <div id="sessionsContent">
       <!-- Stats Cards - DYNAMIC -->
       <div class="grid grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div class="text-sm text-gray-500 mb-2">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleSessions">Total Sessions</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900" id="statsValueSessions">{{ stats.total_sessions }}</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueSessions">{{ stats.total_sessions }}</div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div class="text-sm text-gray-500 mb-2">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleHours">Total Hours</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900" id="statsValueHours">{{ stats.total_hours }}h</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueHours">{{ stats.total_hours }}h</div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div class="text-sm text-gray-500 mb-2">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span id="statsTitleAvg">Avg per Session</span>
           </div>
-          <div class="text-4xl font-bold text-gray-900" id="statsValueAvg">{{ stats.avg_per_session }}h</div>
+          <div class="text-4xl font-bold text-gray-900 dark:text-gray-100" id="statsValueAvg">{{ stats.avg_per_session }}h</div>
         </div>
       </div>
 
       <!-- Teaching Sessions Table - UPDATED WITH DYNAMIC COLUMNS -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <div class="p-6">
           <!-- Table Controls -->
           <div class="flex justify-between items-center mb-6">
@@ -72,13 +76,16 @@
                     name="search"
                     value="{{ search_query }}"
                     placeholder="Search by subject..."
-                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                    class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                           placeholder-gray-400 dark:placeholder-gray-500
+                           focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
                   />
-                  <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                <button type="submit" class="px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition">
                   Search
                 </button>
               </form>
@@ -86,17 +93,18 @@
               <!-- Filter Button -->
               <button
                 onclick="document.getElementById('filterModal').classList.remove('hidden')"
-                class="relative flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition
-                {% if selected_subject or date_from or date_to or time_from or time_to %}bg-teal-50 border-teal-500{% endif %}">
+                class="relative flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                       bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition
+                {% if selected_subject or date_from or date_to or time_from or time_to %}bg-teal-50 dark:bg-teal-900/30 border-teal-500 dark:border-teal-500{% endif %}">
                 
                 <!-- Filter Icon -->
-                <svg class="w-5 h-5 {% if selected_subject or date_from or date_to or time_from or time_to %}text-teal-600{% endif %}" 
+                <svg class="w-5 h-5 {% if selected_subject or date_from or date_to or time_from or time_to %}text-teal-600 dark:text-teal-400{% else %}text-gray-700 dark:text-gray-300{% endif %}" 
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 
                 <!-- Filter Text -->
-                <span class="text-sm font-medium {% if selected_subject or date_from or date_to or time_from or time_to %}text-teal-700{% endif %}">
+                <span class="text-sm font-medium {% if selected_subject or date_from or date_to or time_from or time_to %}text-teal-700 dark:text-teal-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                   Filter
                 </span>
                 
@@ -117,7 +125,7 @@
                 id="bulkDeleteBtn"
                 onclick="bulkDeleteSessions()"
                 style="display: none;"
-                class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                class="flex items-center gap-2 px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -126,60 +134,60 @@
 
               <!-- Download Dropdown - IMPROVED UI -->
               <div class="relative" x-data="{ open: false }">
-  <button
-    @click="open = !open"
-    class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-    </svg>
-    <span class="text-sm font-medium">Download</span>
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-    </svg>
-  </button>
+          <button
+            @click="open = !open"
+            class="flex items-center gap-2 px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span class="text-sm font-medium">Download</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
 
           <div
             x-show="open"
             @click.away="open = false"
             x-cloak
-            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+            class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-10">
             
             <!-- CSV Download -->
             <button 
               onclick="downloadRecordsAuto('csv'); return false;" 
-              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-3">
+              <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <div>
-                <div class="text-sm font-medium text-gray-900">CSV (Excel)</div>
-                <div class="text-xs text-gray-500" id="csv-scope-text">Download all sessions</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">CSV (Excel)</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400" id="csv-scope-text">Download all sessions</div>
               </div>
             </button>
 
             <!-- Excel Download -->
             <button 
               onclick="downloadRecordsAuto('xlsx'); return false;" 
-              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-3">
+              <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               <div>
-                <div class="text-sm font-medium text-gray-900">Excel (XLSX)</div>
-                <div class="text-xs text-gray-500" id="xlsx-scope-text">Download all sessions</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Excel (XLSX)</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400" id="xlsx-scope-text">Download all sessions</div>
               </div>
             </button>
 
             <!-- PDF Download -->
             <button 
               onclick="downloadRecordsAuto('pdf'); return false;" 
-              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3">
-              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-3">
+              <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               <div>
-                <div class="text-sm font-medium text-gray-900">PDF Document</div>
-                <div class="text-xs text-gray-500" id="pdf-scope-text">Download all sessions</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">PDF Document</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400" id="pdf-scope-text">Download all sessions</div>
               </div>
             </button>
           </div>
@@ -191,23 +199,23 @@
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
-                <tr class="border-b-2 border-gray-200">
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                <tr class="border-b-2 border-gray-200 dark:border-gray-700">
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
                     <div class="flex items-center gap-2">
                       <input 
                         type="checkbox" 
                         id="selectAll" 
                         onchange="toggleSelectAll(this)"
-                        class="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        class="w-4 h-4 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
                       >
-                      <span id="selectedCount" class="text-xs text-teal-600 font-semibold" style="display: none;">
+                      <span id="selectedCount" class="text-xs text-teal-600 dark:text-teal-400 font-semibold" style="display: none;">
                         (<span id="selectedNumber">0</span> selected)
                       </span>
                     </div>
                   </th>
                   <!-- DYNAMIC HEADERS based on ordered_columns -->
                   {% for column in ordered_columns %}
-                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
                       {% if column == 'subject' %}Subject
                       {% elif column == 'date' %}Date
                       {% elif column == 'duration' %}Duration
@@ -219,19 +227,19 @@
                       {% endif %}
                     </th>
                   {% endfor %}
-                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">Actions</th>
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% if sessions %}
                   {% for session in sessions %}
-                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition session-row" 
+                  <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition session-row" 
                       data-session-id="{{ session.id }}"
                       data-hours="{{ session.hours_decimal }}">
                     <td class="py-4 px-4">
                       <input 
                         type="checkbox" 
-                        class="session-checkbox w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        class="session-checkbox w-4 h-4 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
                         value="{{ session.id }}"
                         onchange="updateSelectedCount()"
                       >
@@ -241,43 +249,43 @@
                     {% for column in ordered_columns %}
                       <td class="py-4 px-4 text-sm">
                         {% if column == 'subject' %}
-                          <div class="font-medium text-gray-900">{{ session.subject.subject_code }}</div>
-                          <div class="text-xs text-gray-500">{{ session.subject.subject_name|truncatechars:30 }}</div>
+                          <div class="font-medium text-gray-900 dark:text-gray-100">{{ session.subject.subject_code }}</div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">{{ session.subject.subject_name|truncatechars:30 }}</div>
                         
                         {% elif column == 'date' %}
-                          <span class="text-gray-900">{{ session.formatted_date }}</span>
+                          <span class="text-gray-900 dark:text-gray-100">{{ session.formatted_date }}</span>
                         
                         {% elif column == 'duration' %}
-                          <span class="font-semibold text-gray-900">{{ session.hours }}h {{ session.minutes_part }}m</span>
+                          <span class="font-semibold text-gray-900 dark:text-gray-100">{{ session.hours }}h {{ session.minutes_part }}m</span>
                         
                         {% elif column == 'lecture_type' %}
                           {% if session.lecture_type %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
                               {{ session.lecture_type|truncatechars:20 }}
                             </span>
                           {% else %}
-                            <span class="text-gray-400">-</span>
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
                           {% endif %}
                         
                         {% elif column == 'time_in' %}
                           {% if session.time_in %}
-                            <span class="text-gray-900">{{ session.time_in|time:"H:i" }}</span>
+                            <span class="text-gray-900 dark:text-gray-100">{{ session.time_in|time:"H:i" }}</span>
                           {% else %}
-                            <span class="text-gray-400">-</span>
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
                           {% endif %}
                         
                         {% elif column == 'time_out' %}
                           {% if session.time_out %}
-                            <span class="text-gray-900">{{ session.time_out|time:"H:i" }}</span>
+                            <span class="text-gray-900 dark:text-gray-100">{{ session.time_out|time:"H:i" }}</span>
                           {% else %}
-                            <span class="text-gray-400">-</span>
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
                           {% endif %}
                         
                         {% elif column == 'source_file' %}
                           {% if session.teaching_file %}
-                            <span class="text-xs text-gray-600">{{ session.teaching_file.file_name.name|truncatechars:25 }}</span>
+                            <span class="text-xs text-gray-600 dark:text-gray-400">{{ session.teaching_file.file_name.name|truncatechars:25 }}</span>
                           {% else %}
-                            <span class="text-gray-400">-</span>
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
                           {% endif %}
                         
                         {% endif %}
@@ -288,7 +296,7 @@
                       <div class="flex items-center justify-center gap-2">
                         <form method="post" action="{% url 'delete_session' session.id %}" class="inline" onsubmit="return confirm('Delete this session?')">
                           {% csrf_token %}
-                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                          <button type="submit" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition" title="Delete">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -300,9 +308,9 @@
                   {% endfor %}
                 {% else %}
                   <tr>
-                    <td colspan="{{ ordered_columns|length|add:2 }}" class="py-12 text-center text-gray-500">
+                    <td colspan="{{ ordered_columns|length|add:2 }}" class="py-12 text-center text-gray-500 dark:text-gray-400">
                       <div class="flex flex-col items-center gap-3">
-                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-16 h-16 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p class="text-lg font-medium">No teaching sessions found</p>
@@ -317,23 +325,23 @@
 
           <!-- Pagination -->
           {% if sessions.has_other_pages %}
-          <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
-            <div class="text-sm text-gray-600">
+          <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
               Showing {{ sessions.start_index }} to {{ sessions.end_index }} of {{ sessions.paginator.count }} sessions
             </div>
             <div class="flex gap-2">
               {% if sessions.has_previous %}
-                <a href="?page=1{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">First</a>
-                <a href="?page={{ sessions.previous_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Previous</a>
+                <a href="?page=1{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">First</a>
+                <a href="?page={{ sessions.previous_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">Previous</a>
               {% endif %}
 
-              <span class="px-4 py-2 bg-teal-600 text-white rounded-lg">
+              <span class="px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg">
                 {{ sessions.number }}
               </span>
 
               {% if sessions.has_next %}
-                <a href="?page={{ sessions.next_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
-                <a href="?page={{ sessions.paginator.num_pages }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Last</a>
+                <a href="?page={{ sessions.next_page_number }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">Next</a>
+                <a href="?page={{ sessions.paginator.num_pages }}{{ search_param }}{{ filter_params }}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">Last</a>
               {% endif %}
             </div>
           </div>
@@ -344,13 +352,13 @@
 
     <!-- Files Tab Content -->
     <div id="filesContent" class="hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-gray-900">Uploaded Files</h2>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Uploaded Files</h2>
             <button
               onclick="document.getElementById('uploadModal').classList.remove('hidden')"
-              class="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+              class="flex items-center gap-2 px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
@@ -360,17 +368,17 @@
 
           <!-- File Statistics -->
           <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div class="text-sm text-blue-600 mb-1">Total Files</div>
-              <div class="text-2xl font-bold text-blue-900">{{ file_stats.total }}</div>
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <div class="text-sm text-blue-600 dark:text-blue-400 mb-1">Total Files</div>
+              <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ file_stats.total }}</div>
             </div>
-            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div class="text-sm text-green-600 mb-1">Parsed Files</div>
-              <div class="text-2xl font-bold text-green-900">{{ file_stats.parsed }}</div>
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <div class="text-sm text-green-600 dark:text-green-400 mb-1">Parsed Files</div>
+              <div class="text-2xl font-bold text-green-900 dark:text-green-300">{{ file_stats.parsed }}</div>
             </div>
-            <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-              <div class="text-sm text-yellow-600 mb-1">Pending Files</div>
-              <div class="text-2xl font-bold text-yellow-900">{{ file_stats.pending }}</div>
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+              <div class="text-sm text-yellow-600 dark:text-yellow-400 mb-1">Pending Files</div>
+              <div class="text-2xl font-bold text-yellow-900 dark:text-yellow-300">{{ file_stats.pending }}</div>
             </div>
           </div>
 
@@ -378,31 +386,31 @@
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
-                <tr class="border-b border-gray-200">
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
                     <div class="flex items-center gap-2">
                       <input 
                         type="checkbox" 
                         id="selectAllFiles" 
                         onchange="toggleSelectAllFiles(this)"
-                        class="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        class="w-4 h-4 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
                       >
                       <span>File Name</span>
-                      <span id="selectedFilesCount" class="text-xs text-teal-600 font-semibold" style="display: none;">
+                      <span id="selectedFilesCount" class="text-xs text-teal-600 dark:text-teal-400 font-semibold" style="display: none;">
                         (<span id="selectedFilesNumber">0</span> selected)
                       </span>
                     </div>
                   </th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Semester</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Upload Date</th>
-                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
-                  <th class="text-right py-3 px-4 text-sm font-semibold text-gray-600">Sessions</th>
-                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600">
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Semester</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Upload Date</th>
+                  <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                  <th class="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Sessions</th>
+                  <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
                     <button
                       id="bulkDeleteFilesBtn"
                       onclick="bulkDeleteFiles()"
                       style="display: none;"
-                      class="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition">
+                      class="flex items-center gap-2 px-3 py-1.5 bg-red-600 dark:bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -414,41 +422,41 @@
               <tbody>
                 {% if files %}
                   {% for file in files %}
-                  <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-file-id="{{ file.id }}">
+                  <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition" data-file-id="{{ file.id }}">
                     <td class="py-4 px-4">
                       <div class="flex items-center gap-3">
                         <input 
                           type="checkbox" 
-                          class="file-checkbox w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                          class="file-checkbox w-4 h-4 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-teal-500 cursor-pointer"
                           value="{{ file.id }}"
                           onchange="updateSelectedFilesCount()"
                         >
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span class="text-sm font-medium text-gray-900">{{ file.file_name.name|truncatechars:40 }}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ file.file_name.name|truncatechars:40 }}</span>
                       </div>
                     </td>
-                    <td class="py-4 px-4 text-sm text-gray-700">
+                    <td class="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
                       {% if file.semester %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
                           {{ file.semester }}
                         </span>
                       {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-gray-400 dark:text-gray-500">-</span>
                       {% endif %}
                     </td>
-                    <td class="py-4 px-4 text-sm text-gray-700">{{ file.upload_date|date:"M d, Y H:i" }}</td>
+                    <td class="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">{{ file.upload_date|date:"M d, Y H:i" }}</td>
                     <td class="py-4 px-4">
                       {% if file.is_parsed %}
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">
                           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                           </svg>
                           Parsed
                         </span>
                       {% else %}
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
                           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                           </svg>
@@ -457,7 +465,7 @@
                       {% endif %}
                     </td>
                     <td class="py-4 px-4 text-sm font-semibold text-right">
-                      <span class="session-count-{{ file.id }} {% if file.sessions_count == 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                      <span class="session-count-{{ file.id }} {% if file.sessions_count == 0 %}text-red-600 dark:text-red-400{% else %}text-gray-900 dark:text-gray-100{% endif %}">
                         {{ file.sessions_count }}
                       </span>
                     </td>
@@ -467,7 +475,7 @@
                         {% if not file.is_parsed %}
                         <form method="post" action="{% url 'parse_file' file.id %}" class="inline parse-file-form-{{ file.id }}">
                           {% csrf_token %}
-                          <button type="submit" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Parse File">
+                          <button type="submit" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition" title="Parse File">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
@@ -478,7 +486,7 @@
                         <!-- Delete Button -->
                         <form method="post" action="{% url 'delete_file' file.id %}" class="inline delete-file-form-{{ file.id }}" onsubmit="return confirm('Delete this file and all its sessions?')">
                           {% csrf_token %}
-                          <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                          <button type="submit" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition" title="Delete">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -490,9 +498,9 @@
                   {% endfor %}
                 {% else %}
                   <tr>
-                    <td colspan="6" class="py-8 text-center text-gray-500">
+                    <td colspan="6" class="py-8 text-center text-gray-500 dark:text-gray-400">
                       <div class="flex flex-col items-center gap-2">
-                        <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         <p class="text-lg font-medium">No files uploaded yet</p>
@@ -511,12 +519,12 @@
 </div>
 
 <!-- Filter Modal -->
-<div id="filterModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4">
+<div id="filterModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">🔍 Filter Sessions</h2>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">🔍 Filter Sessions</h2>
       <button onclick="document.getElementById('filterModal').classList.add('hidden')" 
-              class="text-gray-400 hover:text-gray-600">
+              class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -528,10 +536,12 @@
       
       <!-- Subject Filter -->
       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
         <select 
           name="subject"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
         >
           <option value="">All Subjects</option>
           {% for subject in subjects %}
@@ -544,24 +554,28 @@
 
       <!-- Date Range -->
       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Range</label>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">From Date</label>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">From Date</label>
             <input
               type="date"
               name="date_from"
               value="{{ date_from }}"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                     focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
             />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">To Date</label>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">To Date</label>
             <input
               type="date"
               name="date_to"
               value="{{ date_to }}"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                     focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
             />
           </div>
         </div>
@@ -569,24 +583,28 @@
 
       <!-- Time Range -->
       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Range</label>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">From Time</label>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">From Time</label>
             <input
               type="time"
               name="time_from"
               value="{{ time_from }}"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                     focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
             />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">To Time</label>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">To Time</label>
             <input
               type="time"
               name="time_to"
               value="{{ time_to }}"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                     focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
             />
           </div>
         </div>
@@ -595,16 +613,16 @@
       <!-- Action Buttons -->
       <div class="flex gap-3 justify-end">
         <a href="{% url 'teaching_records' %}" 
-           class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+           class="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">
           Clear All
         </a>
         <button type="button" 
                 onclick="document.getElementById('filterModal').classList.add('hidden')"
-                class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                class="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">
           Cancel
         </button>
         <button type="submit" 
-                class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                class="px-6 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition">
           Apply Filters
         </button>
       </div>
@@ -613,12 +631,12 @@
 </div>
 
 <!-- Upload Modal -->
-<div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+<div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">📁 Upload Teaching Files</h2>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">📁 Upload Teaching Files</h2>
       <button onclick="closeUploadModal()" 
-              class="text-gray-400 hover:text-gray-600">
+              class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -629,10 +647,10 @@
       {% csrf_token %}
       
       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Select XLSB Files or ZIP Archive <span class="text-red-500">*</span>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Select XLSB Files or ZIP Archive <span class="text-red-500 dark:text-red-400">*</span>
         </label>
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-teal-500 transition cursor-pointer"
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-teal-500 dark:hover:border-teal-400 transition cursor-pointer bg-gray-50 dark:bg-gray-700/50"
              onclick="document.getElementById('bulkFileInput').click()"
              id="dropZone">
           <input 
@@ -644,37 +662,37 @@
             class="hidden" 
             onchange="handleFileSelection(event)"
           >
-          <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <p class="text-gray-600 mb-2">Click to browse or drag and drop</p>
-          <p class="text-sm text-gray-500">Upload XLSB files individually or in a ZIP archive</p>
-          <p class="text-xs text-gray-400 mt-2">✨ ZIP files will be automatically extracted</p>
+          <p class="text-gray-600 dark:text-gray-300 mb-2">Click to browse or drag and drop</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Upload XLSB files individually or in a ZIP archive</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">✨ ZIP files will be automatically extracted</p>
         </div>
       </div>
 
       <div id="selectedFilesList" class="mb-6">
         <div class="flex justify-between items-center mb-2">
-          <label class="block text-sm font-medium text-gray-700">Selected Files:</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selected Files:</label>
           <button 
             type="button" 
             id="clearAllBtn"
             onclick="clearAllFiles()"
-            class="text-sm text-red-600 hover:text-red-800 font-medium hidden">
+            class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium hidden">
             Clear All
           </button>
         </div>
-        <div id="fileListContainer" class="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-          <div class="text-gray-500 text-center">No files selected</div>
+        <div id="fileListContainer" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600">
+          <div class="text-gray-500 dark:text-gray-400 text-center">No files selected</div>
         </div>
       </div>
 
-      <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+      <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <label class="flex items-start cursor-pointer">
-          <input type="checkbox" name="auto_parse" checked class="mt-1 mr-3 w-5 h-5 text-teal-600 rounded">
+          <input type="checkbox" name="auto_parse" checked class="mt-1 mr-3 w-5 h-5 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
           <div>
-            <span class="font-medium text-gray-900">⚡ Auto-parse files after upload</span>
-            <p class="text-sm text-gray-600 mt-1">
+            <span class="font-medium text-gray-900 dark:text-gray-100">⚡ Auto-parse files after upload</span>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Files will be processed immediately and teaching sessions will be created automatically.
             </p>
           </div>
@@ -684,12 +702,12 @@
       <div class="flex gap-3 justify-end">
         <button type="button" 
                 onclick="closeUploadModal()"
-                class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                class="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">
           Cancel
         </button>
         <button type="submit" 
                 id="uploadSubmitBtn"
-                class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                class="px-6 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition">
           📤 Upload Files
         </button>
       </div>
@@ -698,23 +716,23 @@
 </div>
 
 <!-- No Data Found Modal (only shown when parsing returns 0 sessions) -->
-<div id="noDataModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
+<div id="noDataModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-lg w-full mx-4">
     <div class="flex items-start gap-4 mb-6">
       <div class="flex-shrink-0">
-        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-          <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/40 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
       </div>
       <div class="flex-1">
-        <h2 class="text-xl font-bold text-gray-900 mb-2">⚠️ No Data Found</h2>
-        <p class="text-gray-600 mb-4">The following file(s) were parsed but contain no teaching session data:</p>
-        <div id="noDataFileList" class="bg-gray-50 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">⚠️ No Data Found</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">The following file(s) were parsed but contain no teaching session data:</p>
+        <div id="noDataFileList" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600">
           <!-- File list will be populated by JavaScript -->
         </div>
-        <p class="text-sm text-gray-500">Would you like to remove these empty files?</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Would you like to remove these empty files?</p>
       </div>
     </div>
 
@@ -722,21 +740,28 @@
       <button 
         type="button" 
         onclick="keepEmptyFiles()"
-        class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+        class="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition">
         Keep Files
       </button>
       <button 
         type="button" 
         onclick="removeEmptyFiles()"
-        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+        class="px-6 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition">
         Remove Files
       </button>
     </div>
   </div>
 </div>
 
+<!-- DJANGO URL RESOLVER - Define URLs from Django before loading JS -->
+<script>
+  // Define delete URL from Django template tags
+  window.DELETE_SESSIONS_URL = "{% url 'delete_sessions' %}";
+</script>
 
-<script src="{% static 'js/teaching_records.js' %}" defer></script>
+<!-- Load JS with cache busting -->
+<script src="{% static 'js/teaching_records.js' %}?v=3" defer></script>
+
 <script>
 // Store Django data
 const DJANGO_DATA = {
@@ -783,7 +808,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
   }
 });
-
 </script>
 
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

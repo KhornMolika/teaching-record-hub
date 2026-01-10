@@ -573,29 +573,29 @@ function downloadRecords(format, scope) {
 
 // NEW: Auto-detect whether to download selected or all sessions
 function downloadRecordsAuto(format) {
-  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
-  const scope = checkboxes.length > 0 ? 'selected' : 'all';
+  const checkboxes = document.querySelectorAll(".session-checkbox:checked");
+  const scope = checkboxes.length > 0 ? "selected" : "all";
   downloadRecords(format, scope);
 }
 
 // NEW: Update download button descriptions based on selection
 function updateDownloadButtonText() {
-  const checkboxes = document.querySelectorAll('.session-checkbox:checked');
+  const checkboxes = document.querySelectorAll(".session-checkbox:checked");
   const count = checkboxes.length;
-  
-  const csvText = document.getElementById('csv-scope-text');
-  const xlsxText = document.getElementById('xlsx-scope-text');
-  const pdfText = document.getElementById('pdf-scope-text');
-  
+
+  const csvText = document.getElementById("csv-scope-text");
+  const xlsxText = document.getElementById("xlsx-scope-text");
+  const pdfText = document.getElementById("pdf-scope-text");
+
   if (count > 0) {
-    const text = `Download ${count} selected session${count !== 1 ? 's' : ''}`;
+    const text = `Download ${count} selected session${count !== 1 ? "s" : ""}`;
     if (csvText) csvText.textContent = text;
     if (xlsxText) xlsxText.textContent = text;
     if (pdfText) pdfText.textContent = text;
   } else {
-    if (csvText) csvText.textContent = 'Download all sessions';
-    if (xlsxText) xlsxText.textContent = 'Download all sessions';
-    if (pdfText) pdfText.textContent = 'Download all sessions';
+    if (csvText) csvText.textContent = "Download all sessions";
+    if (xlsxText) xlsxText.textContent = "Download all sessions";
+    if (pdfText) pdfText.textContent = "Download all sessions";
   }
 }
 
@@ -613,7 +613,7 @@ function bulkDeleteSessions() {
   ) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = "/delete-sessions/";
+    form.action = "/teaching-records/delete-sessions/";
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
@@ -641,7 +641,7 @@ function deleteSingleSession(sessionId) {
   if (confirm("Are you sure you want to delete this session?")) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = `/delete-session/${sessionId}/`;
+    form.action = `teaching-records/delete-session/${sessionId}/`;
 
     const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
@@ -844,3 +844,4 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   console.log("=== END PAGE LOAD DEBUG ===");
 });
+
