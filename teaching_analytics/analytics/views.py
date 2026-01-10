@@ -4,12 +4,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse # Import JsonResponse
 from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, LecturerSettings
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
 import csv
+from .serializers import TeachingSessionSerializer # Import TeachingSessionSerializer
 
 
 # Custom decorators for role-based access control
@@ -524,10 +525,11 @@ def teaching_records(request):
         except ValueError:
             pass
     
-    # Calculate statistics BEFORE adding calculated fields
-    total_sessions = sessions_query.count()
+    # CRITICAL FIX: Initialize total_minutes here, outside any loops
     total_minutes = 0
+    total_sessions = sessions_query.count()
     
+    # Calculate statistics
     for session in sessions_query:
         if session.time_in and session.time_out:
             time_in_dt = datetime.combine(session.date, session.time_in)
@@ -544,7 +546,7 @@ def teaching_records(request):
     total_hours = round(total_minutes / 60, 2) if total_minutes else 0
     avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
     
-    # CRITICAL FIX: Convert QuerySet to list and add calculated fields
+    # Convert QuerySet to list and add calculated fields
     sessions_list = []
     for session in sessions_query:
         if session.time_in and session.time_out:
@@ -560,14 +562,10 @@ def teaching_records(request):
             hours_part = actual_minutes // 60
             minutes_part = actual_minutes % 60
             
-            # Set all the calculated fields
             session.hours = hours_part
             session.minutes_part = minutes_part
-            session.hours_decimal = round(actual_minutes / 60, 2)  # THIS IS CRITICAL
+            session.hours_decimal = round(actual_minutes / 60, 2)
             session.actual_minutes = actual_minutes
-            
-            # DEBUG: Print to verify
-            print(f"DEBUG: Session {session.id} - hours_decimal set to: {session.hours_decimal}")
             
         elif session.minutes:
             hours_part = session.minutes // 60
@@ -575,34 +573,20 @@ def teaching_records(request):
             
             session.hours = hours_part
             session.minutes_part = minutes_part
-            session.hours_decimal = round(session.minutes / 60, 2)  # THIS IS CRITICAL
+            session.hours_decimal = round(session.minutes / 60, 2)
             session.actual_minutes = session.minutes
-            
-            # DEBUG: Print to verify
-            print(f"DEBUG: Session {session.id} - hours_decimal set to: {session.hours_decimal}")
         else:
             session.hours = 0
             session.minutes_part = 0
-            session.hours_decimal = 0  # THIS IS CRITICAL
+            session.hours_decimal = 0
             session.actual_minutes = 0
-            
-            # DEBUG: Print to verify
-            print(f"DEBUG: Session {session.id} - hours_decimal set to: 0")
         
         sessions_list.append(session)
     
-    # CRITICAL: Paginate the LIST, not the QuerySet
-    print(f"DEBUG: Total sessions in list: {len(sessions_list)}")
-    print(f"DEBUG: First session hours_decimal (before pagination): {sessions_list[0].hours_decimal if sessions_list else 'NO SESSIONS'}")
-    
+    # Pagination - use the list with calculated fields
     paginator = Paginator(sessions_list, settings.records_per_page)
     page_number = request.GET.get('page', 1)
     sessions = paginator.get_page(page_number)
-    
-    # DEBUG: Check if hours_decimal survived pagination
-    if sessions:
-        first_session = sessions[0]
-        print(f"DEBUG: First session on page - ID: {first_session.id}, hours_decimal: {getattr(first_session, 'hours_decimal', 'MISSING')}")
     
     # Get all subjects for filter
     subjects = Subject.objects.filter(
