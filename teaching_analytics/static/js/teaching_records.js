@@ -10,10 +10,14 @@ function switchTab(tab) {
   const filesContent = document.getElementById("filesContent");
 
   if (tab === "sessions") {
-    sessionsTab.classList.add("border-teal-600", "text-teal-600");
-    sessionsTab.classList.remove("border-transparent", "text-gray-500");
-    filesTab.classList.add("border-transparent", "text-gray-500");
-    filesTab.classList.remove("border-teal-600", "text-teal-600");
+    // Update tabs
+    sessionsTab.classList.add("border-teal-600", "text-teal-600", "dark:text-teal-400", "dark:border-teal-400");
+    sessionsTab.classList.remove("border-transparent", "text-gray-500", "dark:text-gray-400");
+    
+    filesTab.classList.add("border-transparent", "text-gray-500", "dark:text-gray-400");
+    filesTab.classList.remove("border-teal-600", "text-teal-600", "dark:text-teal-400", "dark:border-teal-400");
+    
+    // Update content
     sessionsContent.classList.remove("hidden");
     filesContent.classList.add("hidden");
 
@@ -22,10 +26,14 @@ function switchTab(tab) {
     url.searchParams.delete("tab");
     window.history.replaceState({}, "", url);
   } else {
-    filesTab.classList.add("border-teal-600", "text-teal-600");
-    filesTab.classList.remove("border-transparent", "text-gray-500");
-    sessionsTab.classList.add("border-transparent", "text-gray-500");
-    sessionsTab.classList.remove("border-teal-600", "text-teal-600");
+    // Update tabs
+    filesTab.classList.add("border-teal-600", "text-teal-600", "dark:text-teal-400", "dark:border-teal-400");
+    filesTab.classList.remove("border-transparent", "text-gray-500", "dark:text-gray-400");
+    
+    sessionsTab.classList.add("border-transparent", "text-gray-500", "dark:text-gray-400");
+    sessionsTab.classList.remove("border-teal-600", "text-teal-600", "dark:text-teal-400", "dark:border-teal-400");
+    
+    // Update content
     filesContent.classList.remove("hidden");
     sessionsContent.classList.add("hidden");
 

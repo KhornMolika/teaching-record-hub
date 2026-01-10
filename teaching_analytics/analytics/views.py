@@ -303,13 +303,6 @@ def workload(request):
             avg_session_length=Sum("minutes") / Count("id")
         ).order_by("-total_hours")
     )
-    for subject in subject_deep_dive:
-        if subject['session_count'] > 0: # Avoid division by zero
-            subject['avg_session_length'] = int(round(subject['avg_session_length']))
-        else:
-            subject['avg_session_length'] = 0
-    for subject in subject_deep_dive:
-        subject['avg_session_length'] = int(subject['avg_session_length'])
 
     # 3. Peak Hours Analysis
     peak_hours_data = list(
@@ -337,6 +330,80 @@ def workload(request):
 
     return render(request, 'analytics/lecturer/workload.html', context)
 
+
+# Replace the settings_view function in views.py with this updated version:
+@lecturer_required
+def settings_view(request):
+    """
+    Display and handle updates for lecturer settings.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
+
+    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+
+    # Define available columns for teaching records (this is the DEFAULT order)
+    # This is what the reset button will restore
+    available_record_columns = [
+        'date',
+        'subject', 
+        'lecture_type',
+        'time_in',
+        'time_out',
+        'duration', 
+        'source_file',
+    ]
+
+    if request.method == 'POST':
+        settings.theme = request.POST.get('theme', settings.theme)
+        settings.date_format = request.POST.get('date_format', settings.date_format)
+        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
+        
+        try:
+            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
+        except ValueError:
+            messages.error(request, "Invalid value for records per page.")
+        
+        # Handle default_columns WITH ORDER
+        # Get the order from column_order hidden inputs
+        column_order = request.POST.getlist('column_order')
+        # Get which columns are selected (checked)
+        selected_columns = request.POST.getlist('default_columns')
+        
+        # Keep only selected columns in the order they appear
+        ordered_selected_columns = [col for col in column_order if col in selected_columns]
+        
+        if ordered_selected_columns:
+            settings.default_columns = ",".join(ordered_selected_columns)
+        else:
+            # If no columns selected, keep at least one default
+            settings.default_columns = "date"
+
+        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
+        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
+        
+        try:
+            posted_workload_target = request.POST.get('workload_target')
+            if posted_workload_target is not None and posted_workload_target != '':
+                settings.workload_target = int(posted_workload_target)
+        except ValueError:
+            messages.error(request, "Invalid value for workload target. Please enter a number.")
+
+        settings.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('settings')
+
+    # Pass default column order as JSON for the reset button
+    import json
+    context = {
+        'settings': settings,
+        'available_record_columns': available_record_columns,
+        'default_column_order': json.dumps(available_record_columns),  # For reset button
+    }
+    return render(request, 'analytics/lecturer/settings.html', context)
 
 # Updated settings_view function with reset functionality and column ordering
 

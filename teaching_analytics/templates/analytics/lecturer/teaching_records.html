@@ -256,7 +256,8 @@
                   <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 
                             transition-all duration-300 session-row" 
                       data-session-id="{{ session.id }}"
-                      data-hours="{{ session.hours_decimal }}">
+                      data-hours="{{ session.hours_decimal }}"
+                      data-aos="fade-up">
                     <td class="py-4 px-4">
                       <input 
                         type="checkbox" 
@@ -419,7 +420,7 @@
           </div>
 
           <!-- Files Table -->
-          <div class="overflow-x-auto" data-aos="fade-up" data-aos-delay="500">
+          <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-700">
@@ -462,7 +463,8 @@
                   {% for file in files %}
                   <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 
                             transition-all duration-300" 
-                      data-file-id="{{ file.id }}">
+                      data-file-id="{{ file.id }}"
+                      data-aos="fade-up">
                     <td class="py-4 px-4">
                       <div class="flex items-center gap-3">
                         <input 
