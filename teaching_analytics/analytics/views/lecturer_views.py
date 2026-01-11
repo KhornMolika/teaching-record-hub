@@ -8,13 +8,12 @@ from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, L
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
-import csv
 from analytics.services.decorators import lecturer_required
-from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from analytics.models import Lecturer, LecturerSettings
 from ..utils import format_date, get_python_date_format, get_user_settings
+import csv
 
 def some_view(request):
     settings = get_user_settings(request)
