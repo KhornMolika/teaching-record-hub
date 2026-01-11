@@ -71,17 +71,6 @@
       </div>
     </div>
 
-    <!-- Display Messages -->
-    {% if messages %}
-    <div class="mb-6">
-      {% for message in messages %}
-      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
-        {{ message }}
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
     <!-- Login Form -->
     <form method="post" class="space-y-5">
       {% csrf_token %}

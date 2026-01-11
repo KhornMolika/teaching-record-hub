@@ -1,4 +1,3 @@
-
 from django.contrib import admin
 from django.shortcuts import render, redirect
 from django.urls import path
@@ -13,6 +12,13 @@ from .models import (
 )
 from .services.parser import parse_xlsb_and_create_sessions
 from .services.summary_service import generate_summary
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from analytics.models import Lecturer, LecturerSettings
+from analytics.services.decorators import admin_required
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.utils.html import format_html
 
 # ----------------------------
 # Lecturer Admin
@@ -21,14 +27,183 @@ from .services.summary_service import generate_summary
 class LecturerAdmin(admin.ModelAdmin):
     list_display = (
         "lecturer_id",
-        "user",
+        "user_full_name",
+        "user_email",
         "department",
-        "hourly_rate",
+        "approval_status",
         "created_at",
+        "quick_actions",
     )
-    search_fields = ("lecturer_id", "user__username", "user__first_name", "user__last_name")
-    list_filter = ("department",)
-    ordering = ("lecturer_id",)
+    list_filter = ("is_approved", "department", "created_at")
+    search_fields = ("lecturer_id", "user__username", "user__first_name", "user__last_name", "user__email")
+    ordering = ("-created_at",)
+    
+    # Make approval fields read-only (they're set automatically)
+    readonly_fields = ("approved_by", "approved_at", "created_at")
+    
+    # Custom display methods
+    def user_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    user_full_name.short_description = "Name"
+    user_full_name.admin_order_field = "user__first_name"
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = "Email"
+    user_email.admin_order_field = "user__email"
+    
+    def approval_status(self, obj):
+        if obj.is_approved:
+            return format_html('<span style="color: #28a745;">{}</span>', '✓ Approved')
+        return format_html('<span style="color: #ffc107;">{}</span>', '⏳ Pending')
+    approval_status.short_description = "Status"
+    approval_status.admin_order_field = "is_approved"
+    
+    def quick_actions(self, obj):
+        if not obj.is_approved:
+            url = f'/admin/analytics/lecturer/{obj.pk}/approve/'
+            return format_html('<a class="button" href="{}">{}</a>', url, 'Approve')
+        return "—"
+    quick_actions.short_description = "Quick Actions"
+    
+    # Custom URLs for approve action
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:lecturer_id>/approve/',
+                self.admin_site.admin_view(self.approve_lecturer),
+                name='analytics_lecturer_approve',
+            ),
+        ]
+        return custom_urls + urls
+    
+    def approve_lecturer(self, request, lecturer_id):
+        """Quick approve a lecturer"""
+        lecturer = Lecturer.objects.get(pk=lecturer_id)
+        
+        # Directly approve without confirmation page
+        lecturer.is_approved = True
+        lecturer.approved_by = request.user
+        lecturer.approved_at = timezone.now()
+        lecturer.save()
+        
+        # Ensure settings exist
+        LecturerSettings.objects.get_or_create(
+            lecturer=lecturer,
+            defaults={
+                'theme': 'light',
+                'date_format': 'YYYY-MM-DD',
+                'enable_notifications': True,
+                'records_per_page': 10,
+                'workload_target': 15
+            }
+        )
+        
+        self.message_user(
+            request,
+            f"✓ Lecturer '{lecturer.user.get_full_name()}' ({lecturer.lecturer_id}) has been approved!",
+            messages.SUCCESS
+        )
+        return redirect('admin:analytics_lecturer_changelist')
+    
+    # Admin actions for bulk operations
+    actions = ['approve_selected_lecturers', 'reject_selected_lecturers']
+    
+    @admin.action(description='✓ Approve selected lecturers')
+    def approve_selected_lecturers(self, request, queryset):
+        """Approve multiple lecturers at once"""
+        unapproved = queryset.filter(is_approved=False)
+        count = unapproved.count()
+        
+        if count == 0:
+            self.message_user(request, "No unapproved lecturers selected.", messages.WARNING)
+            return
+        
+        # Approve all
+        for lecturer in unapproved:
+            lecturer.is_approved = True
+            lecturer.approved_by = request.user
+            lecturer.approved_at = timezone.now()
+            lecturer.save()
+            
+            # Ensure settings exist
+            LecturerSettings.objects.get_or_create(
+                lecturer=lecturer,
+                defaults={
+                    'theme': 'light',
+                    'date_format': 'YYYY-MM-DD',
+                    'enable_notifications': True,
+                    'records_per_page': 10,
+                    'workload_target': 15
+                }
+            )
+        
+        self.message_user(
+            request,
+            f"✓ Successfully approved {count} lecturer(s).",
+            messages.SUCCESS
+        )
+    
+    @admin.action(description='✗ Reject selected lecturers')
+    def reject_selected_lecturers(self, request, queryset):
+        """Reject and delete selected lecturers"""
+        pending = queryset.filter(is_approved=False)
+        count = pending.count()
+        
+        if count == 0:
+            self.message_user(request, "No pending lecturers selected.", messages.WARNING)
+            return
+        
+        # Delete users (cascade will delete lecturer profiles)
+        for lecturer in pending:
+            lecturer.user.delete()
+        
+        self.message_user(
+            request,
+            f"✗ Successfully rejected and deleted {count} lecturer(s).",
+            messages.SUCCESS
+        )
+    
+    # Customize form fields
+    def get_fieldsets(self, request, obj=None):
+        """Organize fields into logical groups"""
+        if obj is None:  # Creating new lecturer
+            return (
+                ('User Account', {
+                    'fields': ('user',)
+                }),
+                ('Lecturer Information', {
+                    'fields': ('lecturer_id', 'department', 'hourly_rate')
+                }),
+            )
+        else:  # Editing existing lecturer
+            if obj.is_approved:
+                return (
+                    ('User Account', {
+                        'fields': ('user',)
+                    }),
+                    ('Lecturer Information', {
+                        'fields': ('lecturer_id', 'department', 'hourly_rate')
+                    }),
+                    ('Approval Information', {
+                        'fields': ('is_approved', 'approved_by', 'approved_at', 'created_at'),
+                        'classes': ('collapse',),
+                    }),
+                )
+            else:
+                return (
+                    ('User Account', {
+                        'fields': ('user',)
+                    }),
+                    ('Lecturer Information', {
+                        'fields': ('lecturer_id', 'department', 'hourly_rate')
+                    }),
+                    ('Approval Status', {
+                        'fields': ('is_approved', 'created_at'),
+                        'description': 'This lecturer is pending approval. Use the "Approve" button in the list view to approve quickly.'
+                    }),
+                )
 
 
 # ----------------------------
@@ -352,3 +527,122 @@ class WorkloadPredictionAdmin(admin.ModelAdmin):
     )
     list_filter = ("risk_level", "lecturer", "subject")
     ordering = ("-created_at",)
+
+
+
+@admin_required
+def pending_users(request):
+    """
+    Display pending lecturer approvals.
+    Shows all lecturers with is_approved=False
+    """
+    # Get all lecturers pending approval (not approved yet)
+    pending_lecturers = Lecturer.objects.filter(
+        is_approved=False
+    ).select_related('user').order_by('-created_at')
+    
+    context = {
+        'pending_lecturers': pending_lecturers,
+    }
+    
+    return render(request, 'analytics/admin/pending_users.html', context)
+
+
+@admin_required
+def approve_user(request, user_id):
+    """
+    Approve a pending lecturer.
+    Sets is_approved=True and updates department if provided.
+    """
+    if request.method != 'POST':
+        return redirect('pending_users')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    try:
+        lecturer = Lecturer.objects.get(user=user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found for this user.")
+        return redirect('pending_users')
+    
+    # Get form data
+    department = request.POST.get('department', lecturer.department)
+    lecturer_id = request.POST.get('lecturer_id', lecturer.lecturer_id)
+    
+    # Validate lecturer_id
+    if not lecturer_id:
+        messages.error(request, "Lecturer ID is required.")
+        return redirect('pending_users')
+    
+    # Check if lecturer_id is already taken by another lecturer
+    if Lecturer.objects.filter(lecturer_id=lecturer_id).exclude(id=lecturer.id).exists():
+        messages.error(request, f"Lecturer ID '{lecturer_id}' is already in use.")
+        return redirect('pending_users')
+    
+    try:
+        # Update lecturer profile
+        lecturer.lecturer_id = lecturer_id
+        lecturer.department = department
+        lecturer.is_approved = True
+        lecturer.approved_by = request.user
+        lecturer.approved_at = timezone.now()
+        lecturer.save()
+        
+        # Ensure settings exist
+        LecturerSettings.objects.get_or_create(
+            lecturer=lecturer,
+            defaults={
+                'theme': 'light',
+                'date_format': 'YYYY-MM-DD',
+                'enable_notifications': True,
+                'records_per_page': 10,
+                'workload_target': 15
+            }
+        )
+        
+        messages.success(
+            request, 
+            f"Lecturer '{user.get_full_name()}' has been approved with ID: {lecturer_id}"
+        )
+        
+        # TODO: Send email notification to user about approval
+        
+    except Exception as e:
+        messages.error(request, f"Error approving lecturer: {str(e)}")
+    
+    return redirect('pending_users')
+
+
+@admin_required
+def reject_user(request, user_id):
+    """
+    Reject and delete a pending lecturer registration.
+    Deletes both User and Lecturer records.
+    """
+    if request.method != 'POST':
+        return redirect('pending_users')
+    
+    user = get_object_or_404(User, id=user_id)
+    username = user.username
+    full_name = user.get_full_name()
+    
+    try:
+        # Check if user has a lecturer profile
+        try:
+            lecturer = Lecturer.objects.get(user=user)
+            # Only allow rejection of unapproved lecturers
+            if lecturer.is_approved:
+                messages.error(request, f"Cannot reject an already approved lecturer.")
+                return redirect('pending_users')
+        except Lecturer.DoesNotExist:
+            pass
+        
+        # Delete the user (cascade will delete Lecturer profile)
+        user.delete()
+        
+        messages.success(request, f"Lecturer '{full_name}' (@{username}) has been rejected and removed.")
+        
+    except Exception as e:
+        messages.error(request, f"Error rejecting user: {str(e)}")
+    
+    return redirect('pending_users')

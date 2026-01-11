@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -10,10 +9,12 @@ from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
 import csv
-from .utils import format_date, get_python_date_format,get_user_settings
-from analytics.services.decorators import admin_required, lecturer_required
-from django.contrib.auth.password_validation import validate_password
+from analytics.services.decorators import lecturer_required
 from django.core.exceptions import ValidationError
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from analytics.models import Lecturer, LecturerSettings
+from ..utils import format_date, get_python_date_format, get_user_settings
 
 def some_view(request):
     settings = get_user_settings(request)
@@ -21,146 +22,6 @@ def some_view(request):
         'settings': settings
     }
     return render(request, 'template.html', context)
-
-# Register view
-def register_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-
-        # Validation
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match")
-        elif User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists")
-        elif User.objects.filter(email=email).exists():
-            messages.error(request, "Email already exists")
-        else:
-            # Create a temporary user object for validation
-            temp_user = User(
-                username=username,
-                email=email,
-                first_name=first_name,
-                last_name=last_name
-            )
-            
-            try:
-                # Validate password using Django's built-in validators
-                validate_password(password, user=temp_user)
-                
-                # If validation passes, create the user
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name,
-                    password=password,
-                    is_active=False 
-                )
-                messages.success(request, "Account created successfully! Please wait for admin approval before logging in.")
-                return redirect('login')
-                
-            except ValidationError as e:
-                # Display all validation errors
-                for error in e.messages:
-                    messages.error(request, error)
-
-    return render(request, 'analytics/auth/register.html')
-
-
-def login_view(request):
-    # Redirect if already logged in
-    if request.user.is_authenticated:
-        if request.user.is_staff and request.user.is_active:
-            return redirect('dashboard')
-        elif request.user.is_active:
-            return redirect('home')
-    
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        role = request.POST.get('role')  # 'administrator' or 'lecturer'
-        
-        user = authenticate(request, username=username, password=password)
-        
-        if user:
-            if not user.is_active:
-                messages.error(request, "Your account is pending admin approval.")
-                return render(request, 'analytics/auth/login.html')
-            
-            # Role-based validation
-            if role == 'administrator':
-                # Admin must be staff AND active
-                if user.is_staff and user.is_active:
-                    login(request, user)
-                    
-                    # Store theme preference in session for admin
-                    try:
-                        lecturer = Lecturer.objects.get(user=user)
-                        settings = LecturerSettings.objects.get(lecturer=lecturer)
-                        request.session['theme'] = settings.theme
-                    except:
-                        request.session['theme'] = 'light'
-                    
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, "You don't have administrator privileges.")
-            
-            elif role == 'lecturer':
-                # Lecturer must be active AND NOT staff
-                if user.is_active and not user.is_staff:
-                    login(request, user)
-                    
-                    # Store theme preference in session for lecturer
-                    try:
-                        lecturer = Lecturer.objects.get(user=user)
-                        settings = LecturerSettings.objects.get(lecturer=lecturer)
-                        request.session['theme'] = settings.theme
-                    except:
-                        request.session['theme'] = 'light'
-                    
-                    return redirect('home')
-                else:
-                    messages.error(request, "You don't have lecturer privileges.")
-            
-            else:
-                messages.error(request, "Invalid role selected.")
-        else:
-            messages.error(request, "Invalid username or password")
-    
-    return render(request, 'analytics/auth/login.html')
-
-
-# Logout view
-@login_required(login_url='login')
-def logout_view(request):
-    user_name = request.user.get_full_name().strip() or request.user.username
-    logout(request)
-    messages.success(request, f"Goodbye {user_name}! You have been logged out successfully.")
-    redirect_url = 'login'
-    return redirect(redirect_url)
-
-# Protected dashboard for administrators
-@admin_required
-def dashboard(request):
-    # You can add admin-specific data here
-    context = {
-        'total_lecturers': User.objects.filter(is_staff=False, is_active=True).count(),
-        'pending_approvals': User.objects.filter(is_active=False).count(),
-    }
-    
-    return render(request, 'analytics/admin/dashboard.html', context)
-
-
-# Admin - Lecturers page
-@admin_required
-def lecturers(request):
-    return render(request, 'analytics/admin/lecturers.html')
-
 
 @lecturer_required
 def home(request):
@@ -348,157 +209,6 @@ def workload(request):
 
     return render(request, 'analytics/lecturer/workload.html', context)
 
-
-# Replace the settings_view function in views.py with this updated version:
-@lecturer_required
-def settings_view(request):
-    """
-    Display and handle updates for lecturer settings.
-    """
-    try:
-        lecturer = Lecturer.objects.get(user=request.user)
-    except Lecturer.DoesNotExist:
-        messages.error(request, "No lecturer profile found. Please contact admin.")
-        return redirect("login")
-
-    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
-
-    # Define available columns for teaching records (this is the DEFAULT order)
-    # This is what the reset button will restore
-    available_record_columns = [
-        'date',
-        'subject', 
-        'lecture_type',
-        'time_in',
-        'time_out',
-        'duration', 
-        'source_file',
-    ]
-
-    if request.method == 'POST':
-        settings.theme = request.POST.get('theme', settings.theme)
-        settings.date_format = request.POST.get('date_format', settings.date_format)
-        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
-        
-        try:
-            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
-        except ValueError:
-            messages.error(request, "Invalid value for records per page.")
-        
-        # Handle default_columns WITH ORDER
-        # Get the order from column_order hidden inputs
-        column_order = request.POST.getlist('column_order')
-        # Get which columns are selected (checked)
-        selected_columns = request.POST.getlist('default_columns')
-        
-        # Keep only selected columns in the order they appear
-        ordered_selected_columns = [col for col in column_order if col in selected_columns]
-        
-        if ordered_selected_columns:
-            settings.default_columns = ",".join(ordered_selected_columns)
-        else:
-            # If no columns selected, keep at least one default
-            settings.default_columns = "date"
-
-        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
-        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
-        
-        try:
-            posted_workload_target = request.POST.get('workload_target')
-            if posted_workload_target is not None and posted_workload_target != '':
-                settings.workload_target = int(posted_workload_target)
-        except ValueError:
-            messages.error(request, "Invalid value for workload target. Please enter a number.")
-
-        settings.save()
-        messages.success(request, "Settings updated successfully!")
-        return redirect('settings')
-
-    # Pass default column order as JSON for the reset button
-    import json
-    context = {
-        'settings': settings,
-        'available_record_columns': available_record_columns,
-        'default_column_order': json.dumps(available_record_columns),  # For reset button
-    }
-    return render(request, 'analytics/lecturer/settings.html', context)
-
-# Updated settings_view function with reset functionality and column ordering
-
-@lecturer_required
-def settings_view(request):
-    """
-    Display and handle updates for lecturer settings.
-    """
-    try:
-        lecturer = Lecturer.objects.get(user=request.user)
-    except Lecturer.DoesNotExist:
-        messages.error(request, "No lecturer profile found. Please contact admin.")
-        return redirect("login")
-
-    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
-
-    # Define available columns for teaching records (this is the DEFAULT order)
-    available_record_columns = [
-        'subject', 
-        'date', 
-        'duration', 
-        'lecture_type',
-        'time_in',
-        'time_out',
-        'source_file',
-    ]
-
-    if request.method == 'POST':
-        settings.theme = request.POST.get('theme', settings.theme)
-        settings.date_format = request.POST.get('date_format', settings.date_format)
-        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
-        
-        try:
-            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
-        except ValueError:
-            messages.error(request, "Invalid value for records per page.")
-        
-        # Handle default_columns WITH ORDER
-        # Get the order from column_order hidden inputs
-        column_order = request.POST.getlist('column_order')
-        # Get which columns are selected (checked)
-        selected_columns = request.POST.getlist('default_columns')
-        
-        # Keep only selected columns in the order they appear
-        ordered_selected_columns = [col for col in column_order if col in selected_columns]
-        
-        if ordered_selected_columns:
-            settings.default_columns = ",".join(ordered_selected_columns)
-        else:
-            # If no columns selected, keep at least one default
-            settings.default_columns = "date"
-
-        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
-        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
-        
-        try:
-            posted_workload_target = request.POST.get('workload_target')
-            if posted_workload_target is not None and posted_workload_target != '':
-                settings.workload_target = int(posted_workload_target)
-        except ValueError:
-            messages.error(request, "Invalid value for workload target. Please enter a number.")
-
-        settings.save()
-        messages.success(request, "Settings updated successfully!")
-        return redirect('settings')
-
-    # Pass default column order as JSON for the reset button
-    import json
-    context = {
-        'settings': settings,
-        'available_record_columns': available_record_columns,
-        'default_column_order': json.dumps(available_record_columns),  # For reset button
-    }
-    return render(request, 'analytics/lecturer/settings.html', context)
-
-
-# Updated teaching_records view to use ordered columns
 
 @login_required
 def teaching_records(request):
@@ -693,9 +403,77 @@ def teaching_records(request):
     return render(request, 'analytics/lecturer/teaching_records.html', context)
 
 
-# Replace the upload_files function in views.py with this:
+@lecturer_required
+def settings_view(request):
+    """
+    Display and handle updates for lecturer settings.
+    """
+    try:
+        lecturer = Lecturer.objects.get(user=request.user)
+    except Lecturer.DoesNotExist:
+        messages.error(request, "No lecturer profile found. Please contact admin.")
+        return redirect("login")
 
-# Replace the upload_files function in views.py with this:
+    settings, created = LecturerSettings.objects.get_or_create(lecturer=lecturer)
+
+    # Define available columns for teaching records (this is the DEFAULT order)
+    available_record_columns = [
+        'subject', 
+        'date', 
+        'duration', 
+        'lecture_type',
+        'time_in',
+        'time_out',
+        'source_file',
+    ]
+
+    if request.method == 'POST':
+        settings.theme = request.POST.get('theme', settings.theme)
+        settings.date_format = request.POST.get('date_format', settings.date_format)
+        settings.enable_notifications = request.POST.get('enable_notifications') == 'on'
+        
+        try:
+            settings.records_per_page = int(request.POST.get('records_per_page', settings.records_per_page))
+        except ValueError:
+            messages.error(request, "Invalid value for records per page.")
+        
+        # Handle default_columns WITH ORDER
+        # Get the order from column_order hidden inputs
+        column_order = request.POST.getlist('column_order')
+        # Get which columns are selected (checked)
+        selected_columns = request.POST.getlist('default_columns')
+        
+        # Keep only selected columns in the order they appear
+        ordered_selected_columns = [col for col in column_order if col in selected_columns]
+        
+        if ordered_selected_columns:
+            settings.default_columns = ",".join(ordered_selected_columns)
+        else:
+            # If no columns selected, keep at least one default
+            settings.default_columns = "date"
+
+        settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
+        settings.workload_display = request.POST.get('workload_display', settings.workload_display)
+        
+        try:
+            posted_workload_target = request.POST.get('workload_target')
+            if posted_workload_target is not None and posted_workload_target != '':
+                settings.workload_target = int(posted_workload_target)
+        except ValueError:
+            messages.error(request, "Invalid value for workload target. Please enter a number.")
+
+        settings.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('settings')
+
+    # Pass default column order as JSON for the reset button
+    import json
+    context = {
+        'settings': settings,
+        'available_record_columns': available_record_columns,
+        'default_column_order': json.dumps(available_record_columns),  # For reset button
+    }
+    return render(request, 'analytics/lecturer/settings.html', context)
 
 @login_required
 def upload_files(request):

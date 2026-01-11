@@ -11,10 +11,38 @@ class Lecturer(models.Model):
     hourly_rate = models.DecimalField(
         max_digits=8, decimal_places=2, blank=True, null=True
     )
+    
+    # APPROVAL STATUS - NEW FIELD
+    is_approved = models.BooleanField(
+        default=False, 
+        help_text="Admin must approve before lecturer can access the system"
+    )
+    approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='approved_lecturers',
+        help_text="Admin who approved this lecturer"
+    )
+    approved_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="When the lecturer was approved"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.lecturer_id})"
+    
+    @property
+    def status(self):
+        """Return approval status as string"""
+        if self.is_approved:
+            return "Approved"
+        return "Pending Approval"
+
 
 
 class LecturerSettings(models.Model):
