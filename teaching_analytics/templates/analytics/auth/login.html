@@ -1,86 +1,72 @@
-{% extends "../base.html" %} {% block title %}Login - Workload Management{%
-endblock %}{% endblock %} {% block content %}
-<div class="flex items-center justify-center min-h-screen px-4">
-  <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+{% extends "../base.html" %}
+{% block title %}Login - Workload Management{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-gray-900 dark:to-gray-800">
+  <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-10 w-full max-w-md relative">
+    <!-- Theme Toggle Button - Inside Card -->
+    <button 
+      id="theme-toggle" 
+      class="absolute top-4 right-4 p-2 rounded-lg bg-teal-50 dark:bg-gray-700 hover:bg-teal-100 dark:hover:bg-gray-600 transition-all duration-200"
+      aria-label="Toggle theme"
+    >
+      <!-- Sun icon (shows in dark mode) -->
+      <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
+      </svg>
+      <!-- Moon icon (shows in light mode) -->
+      <svg id="theme-toggle-dark-icon" class="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+      </svg>
+    </button>
+    
     <!-- Header -->
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Welcome</h1>
-      <p class="text-gray-500 mt-2">Sign in or create an account to continue</p>
+      <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white">Welcome Back</h1>
+      <p class="text-gray-500 dark:text-gray-300 mt-2">Sign in or create an account to continue</p>
     </div>
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-8">
-      <div
-        class="flex-1 py-2.5 text-center bg-gray-900 text-white rounded-lg font-medium"
-      >
+      <div class="flex-1 py-3 text-center bg-teal-600 text-white rounded-xl font-semibold shadow-md">
         Login
       </div>
-      <a
-        href="{% url 'register' %}"
-        class="flex-1 py-2.5 text-center text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
-      >
+      <a href="{% url 'register' %}" 
+         class="flex-1 py-3 text-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl font-medium transition">
         Register
       </a>
     </div>
 
     <!-- Role Selection -->
     <div class="mb-6">
-      <label class="block text-sm font-medium text-gray-700 mb-3"
-        >Select your role</label
-      >
-      <div class="grid grid-cols-2 gap-3">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        Select your role
+      </label>
+      <div class="grid grid-cols-2 gap-4">
         <!-- Administrator Card -->
-        <button
-          type="button"
-          class="role-option flex flex-col items-center p-4 border-2 border-gray-200 rounded-xl hover:border-gray-300 transition group"
-          data-role="administrator"
-        >
-          <div
-            class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 group-hover:bg-gray-200 transition"
-          >
-            <svg
-              class="w-6 h-6 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
+        <button type="button" 
+                class="role-option flex flex-col items-center p-5 border-2 border-gray-200 dark:border-gray-600 rounded-2xl hover:border-teal-500 hover:shadow-lg transition group"
+                data-role="administrator">
+          <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-3 group-hover:bg-teal-500 transition">
+            <svg class="w-7 h-7 text-gray-600 dark:text-gray-300 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
             </svg>
           </div>
-          <span class="font-semibold text-gray-900 text-sm">Administrator</span>
-          <span class="text-xs text-gray-500 mt-1">Full system access</span>
+          <span class="font-semibold text-gray-900 dark:text-gray-200 text-sm group-hover:text-teal-700 transition">Administrator</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400 mt-1 group-hover:text-teal-600 transition">Full system access</span>
         </button>
 
         <!-- Lecturer Card (Selected by default) -->
-        <button
-          type="button"
-          class="role-option flex flex-col items-center p-4 border-2 border-teal-500 bg-teal-50 rounded-xl transition group"
-          data-role="lecturer"
-        >
-          <div
-            class="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center mb-3"
-          >
-            <svg
-              class="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
+        <button type="button" 
+                class="role-option flex flex-col items-center p-5 border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/30 rounded-2xl shadow-sm transition group"
+                data-role="lecturer">
+          <div class="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center mb-3 transition">
+            <svg class="w-7 h-7 text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
             </svg>
           </div>
-          <span class="font-semibold text-teal-700 text-sm">Lecturer</span>
-          <span class="text-xs text-teal-600 mt-1">View your workload</span>
+          <span class="font-semibold text-teal-700 dark:text-teal-400 text-sm">Lecturer</span>
+          <span class="text-xs text-teal-600 dark:text-teal-500 mt-1">View your workload</span>
         </button>
       </div>
     </div>
@@ -89,9 +75,7 @@ endblock %}{% endblock %} {% block content %}
     {% if messages %}
     <div class="mb-6">
       {% for message in messages %}
-      <div
-        class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
-      >
+      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
         {{ message }}
       </div>
       {% endfor %}
@@ -99,56 +83,33 @@ endblock %}{% endblock %} {% block content %}
     {% endif %}
 
     <!-- Login Form -->
-    <form method="post" class="space-y-4">
+    <form method="post" class="space-y-5">
       {% csrf_token %}
-
       <input type="hidden" name="role" id="selected-role" value="lecturer" />
 
       <!-- Username Field -->
       <div>
-        <label
-          for="username"
-          class="block text-sm font-medium text-gray-700 mb-1.5"
-          >Username</label
-        >
-        <input
-          type="text"
-          id="username"
-          name="username"
-          required
-          placeholder="Enter your username"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
-        />
+        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Username</label>
+        <input type="text" id="username" name="username" required placeholder="Enter your username"
+               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition" />
       </div>
 
       <!-- Password Field -->
       <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-700 mb-1.5"
-          >Password</label
-        >
-        <input
-          type="password"
-          id="password"
-          name="password"
-          required
-          placeholder="Enter your password"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
-        />
+        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password"
+               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition" />
       </div>
 
       <!-- Submit Button -->
-      <button
-        type="submit"
-        class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 rounded-lg transition mt-6"
-      >
+      <button type="submit" 
+              class="w-full bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all mt-4">
         Sign In
       </button>
     </form>
 
     <!-- Footer Text -->
-    <p class="text-center text-xs text-gray-500 mt-6">
+    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
       By continuing, you agree to our
       <a href="#" class="text-teal-600 hover:underline">Terms of Service</a>
       and
@@ -156,49 +117,77 @@ endblock %}{% endblock %} {% block content %}
     </p>
   </div>
 </div>
-{% endblock %} {% block extra_js %}
+{% endblock %}
+
+{% block extra_js %}
 <script>
+  // Theme toggle functionality
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+  // Check current theme on page load
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+    themeToggleLightIcon.classList.remove('hidden');
+    themeToggleDarkIcon.classList.add('hidden');
+  } else {
+    document.documentElement.classList.remove('dark');
+    themeToggleDarkIcon.classList.remove('hidden');
+    themeToggleLightIcon.classList.add('hidden');
+  }
+
+  // Toggle theme on button click
+  themeToggleBtn.addEventListener('click', function() {
+    document.documentElement.classList.toggle('dark');
+    themeToggleDarkIcon.classList.toggle('hidden');
+    themeToggleLightIcon.classList.toggle('hidden');
+    
+    if (document.documentElement.classList.contains('dark')) {
+      localStorage.setItem('theme', 'dark');
+    } else {
+      localStorage.setItem('theme', 'light');
+    }
+  });
+
   // Role selection functionality
   const roleButtons = document.querySelectorAll(".role-option");
   const roleInput = document.getElementById("selected-role");
 
   roleButtons.forEach((button) => {
     button.addEventListener("click", function () {
-      // Remove selected state from all buttons
       roleButtons.forEach((btn) => {
-        btn.classList.remove("border-teal-500", "bg-teal-50");
-        btn.classList.add("border-gray-200");
+        btn.classList.remove("border-teal-500", "bg-teal-50", "dark:bg-teal-900/30", "shadow-lg");
+        btn.classList.add("border-gray-200", "dark:border-gray-600", "bg-white", "dark:bg-transparent");
         const icon = btn.querySelector("div");
         icon.classList.remove("bg-teal-500");
-        icon.classList.add("bg-gray-100");
+        icon.classList.add("bg-gray-100", "dark:bg-gray-700");
         const svg = btn.querySelector("svg");
         svg.classList.remove("text-white");
-        svg.classList.add("text-gray-600");
+        svg.classList.add("text-gray-600", "dark:text-gray-300");
         const title = btn.querySelector("span:first-of-type");
-        title.classList.remove("text-teal-700");
-        title.classList.add("text-gray-900");
+        title.classList.remove("text-teal-700", "dark:text-teal-400");
+        title.classList.add("text-gray-900", "dark:text-gray-200");
         const subtitle = btn.querySelector("span:last-of-type");
-        subtitle.classList.remove("text-teal-600");
-        subtitle.classList.add("text-gray-500");
+        subtitle.classList.remove("text-teal-600", "dark:text-teal-500");
+        subtitle.classList.add("text-gray-500", "dark:text-gray-400");
       });
 
-      // Add selected state to clicked button
-      this.classList.remove("border-gray-200");
-      this.classList.add("border-teal-500", "bg-teal-50");
+      this.classList.remove("border-gray-200", "dark:border-gray-600", "bg-white", "dark:bg-transparent");
+      this.classList.add("border-teal-500", "bg-teal-50", "dark:bg-teal-900/30", "shadow-lg");
       const icon = this.querySelector("div");
-      icon.classList.remove("bg-gray-100");
+      icon.classList.remove("bg-gray-100", "dark:bg-gray-700");
       icon.classList.add("bg-teal-500");
       const svg = this.querySelector("svg");
-      svg.classList.remove("text-gray-600");
+      svg.classList.remove("text-gray-600", "dark:text-gray-300");
       svg.classList.add("text-white");
       const title = this.querySelector("span:first-of-type");
-      title.classList.remove("text-gray-900");
-      title.classList.add("text-teal-700");
+      title.classList.remove("text-gray-900", "dark:text-gray-200");
+      title.classList.add("text-teal-700", "dark:text-teal-400");
       const subtitle = this.querySelector("span:last-of-type");
-      subtitle.classList.remove("text-gray-500");
-      subtitle.classList.add("text-teal-600");
+      subtitle.classList.remove("text-gray-500", "dark:text-gray-400");
+      subtitle.classList.add("text-teal-600", "dark:text-teal-500");
 
-      // Update hidden input
       roleInput.value = this.dataset.role;
     });
   });

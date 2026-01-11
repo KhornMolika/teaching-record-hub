@@ -4,14 +4,16 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
-from django.http import HttpResponse, JsonResponse # Import JsonResponse
+from django.http import HttpResponse
 from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, LecturerSettings
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
 import csv
-from .serializers import TeachingSessionSerializer # Import TeachingSessionSerializer
 from .utils import format_date, get_python_date_format,get_user_settings
+from analytics.services.decorators import admin_required, lecturer_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 def some_view(request):
     settings = get_user_settings(request)
@@ -20,27 +22,6 @@ def some_view(request):
     }
     return render(request, 'template.html', context)
 
-# Custom decorators for role-based access control
-def admin_required(view_func):
-    @login_required(login_url='login')
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_active or not request.user.is_staff:
-            messages.error(request, "Access denied. Admins only.")
-            return redirect('login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
-def lecturer_required(view_func):
-    @login_required(login_url='login')
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_active or request.user.is_staff:
-            messages.error(request, "Access denied. Lecturers only.")
-            return redirect('login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
 # Register view
 def register_view(request):
     if request.method == 'POST':
@@ -48,26 +29,45 @@ def register_view(request):
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
 
-        if password1 != password2:
+        # Validation
+        if password != confirm_password:
             messages.error(request, "Passwords do not match")
         elif User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists")
         elif User.objects.filter(email=email).exists():
             messages.error(request, "Email already exists")
         else:
-            user = User.objects.create_user(
+            # Create a temporary user object for validation
+            temp_user = User(
                 username=username,
                 email=email,
                 first_name=first_name,
-                last_name=last_name,
-                password=password1,
-                is_active=False  # Set to False so users need admin approval
+                last_name=last_name
             )
-            messages.success(request, "Account created successfully! Please login.")
-            return redirect('login')
+            
+            try:
+                # Validate password using Django's built-in validators
+                validate_password(password, user=temp_user)
+                
+                # If validation passes, create the user
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    password=password,
+                    is_active=False 
+                )
+                messages.success(request, "Account created successfully! Please wait for admin approval before logging in.")
+                return redirect('login')
+                
+            except ValidationError as e:
+                # Display all validation errors
+                for error in e.messages:
+                    messages.error(request, error)
 
     return render(request, 'analytics/auth/register.html')
 
@@ -97,6 +97,15 @@ def login_view(request):
                 # Admin must be staff AND active
                 if user.is_staff and user.is_active:
                     login(request, user)
+                    
+                    # Store theme preference in session for admin
+                    try:
+                        lecturer = Lecturer.objects.get(user=user)
+                        settings = LecturerSettings.objects.get(lecturer=lecturer)
+                        request.session['theme'] = settings.theme
+                    except:
+                        request.session['theme'] = 'light'
+                    
                     return redirect('dashboard')
                 else:
                     messages.error(request, "You don't have administrator privileges.")
@@ -105,6 +114,15 @@ def login_view(request):
                 # Lecturer must be active AND NOT staff
                 if user.is_active and not user.is_staff:
                     login(request, user)
+                    
+                    # Store theme preference in session for lecturer
+                    try:
+                        lecturer = Lecturer.objects.get(user=user)
+                        settings = LecturerSettings.objects.get(lecturer=lecturer)
+                        request.session['theme'] = settings.theme
+                    except:
+                        request.session['theme'] = 'light'
+                    
                     return redirect('home')
                 else:
                     messages.error(request, "You don't have lecturer privileges.")
@@ -120,11 +138,11 @@ def login_view(request):
 # Logout view
 @login_required(login_url='login')
 def logout_view(request):
-    user_name = request.user.get_full_name() or request.user.username
+    user_name = request.user.get_full_name().strip() or request.user.username
     logout(request)
     messages.success(request, f"Goodbye {user_name}! You have been logged out successfully.")
-    return redirect('login')
-
+    redirect_url = 'login'
+    return redirect(redirect_url)
 
 # Protected dashboard for administrators
 @admin_required
