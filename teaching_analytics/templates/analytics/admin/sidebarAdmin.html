@@ -30,28 +30,38 @@
   </div>
 
   <!-- User Info -->
-  <div class="px-6 py-4 bg-white/10 mx-4 rounded-lg mb-6">
-    <div class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 min-w-10 bg-teal-300 min-h-10 rounded-full flex items-center justify-center text-teal-800 font-bold"
-      >
-        {% if request.user.first_name %}{{ request.user.first_name|first|upper
-        }}{% else %}{{ request.user.username|first|upper }}{% endif %}
-      </div>
-      <div>
-        <div class="font-semibold">
-          {% if request.user.get_full_name %}{{ request.user.get_full_name }}{%
-          else %}{{ request.user.username }}{% endif %}
-        </div>
-        <div class="text-xs text-teal-100">Administrator</div>
+<div class="px-6 py-4 bg-white/10 mx-4 rounded-lg mb-6">
+  <div class="flex items-center gap-3">
+    
+    <!-- Avatar -->
+    <div
+      class="w-10 h-10 min-w-[2.5rem] min-h-[2.5rem] bg-teal-300 rounded-full flex items-center justify-center text-teal-800 font-bold"
+    >
+      {% if request.user.first_name %}
+        {{ request.user.first_name|first|upper }}
+      {% else %}
+        {{ request.user.username|first|upper }}
+      {% endif %}
+    </div>
 
-        <!-- <div class="text-xs text-teal-100">
-          {% if request.user.email %} {{ request.user.email }} {% else %}
-          Computer Science {% endif %}
-        </div> -->
+    <!-- User info -->
+    <div>
+      <div class="font-semibold">
+        {% if request.user.first_name or request.user.last_name %}
+          {{ request.user.get_full_name }}
+        {% else %}
+          {{ request.user.username }}
+        {% endif %}
+      </div>
+
+      <div class="text-xs text-teal-100">
+        Administrator
       </div>
     </div>
+
   </div>
+</div>
+
 
   <!-- Navigation -->
   <nav class="flex-1 px-4 overflow-y-auto">
@@ -75,7 +85,7 @@
       Dashboard
     </a>
     <a
-      href="#"
+      href="{% url 'lecturers' %}"
       class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'lecturers' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
@@ -94,7 +104,7 @@
       Lecturers
     </a>
     <a
-      href="#"
+      href="{% url 'admin_teaching_records' %}"
       class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_teaching_records' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
@@ -112,27 +122,9 @@
       </svg>
       Teaching Records
     </a>
+
     <a
-      href="#"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'analytics' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
-    >
-      <svg
-        class="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-        />
-      </svg>
-      Analytics
-    </a>
-    <a
-      href="#"
+      href="{% url 'admin_workload_prediction' %}"
       class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_workload_prediction' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
@@ -155,7 +147,7 @@
   <!-- Bottom Navigation -->
   <div class="px-4 pb-6">
     <a
-      href="#"
+      href="{% url 'admin_settings' %}"
       class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2 transition"
     >
       <svg

@@ -10,6 +10,15 @@ urlpatterns = [
     
     # Admin URLs
     path('dashboard/', admin_views.dashboard, name='dashboard'),
+    path('lecturers/', admin_views.lecturers, name='lecturers'),
+    path('lecturers/approve/<int:lecturer_id>/', admin_views.approve_lecturer, name='approve_lecturer'),
+    path('lecturers/edit/<int:lecturer_id>/', admin_views.edit_lecturer, name='edit_lecturer'),
+    path('lecturers/create/', admin_views.create_lecturer, name='create_lecturer'),
+    path('administrator/teaching-records/', admin_views.admin_teaching_records, name='admin_teaching_records'),
+    path('administrator/teaching-records/upload/', admin_views.admin_upload_files, name='admin_upload_files'),
+
+    path('administrator/workload-prediction/', admin_views.admin_workload_prediction, name='admin_workload_prediction'),
+    path('administrator/settings/', admin_views.admin_settings, name='admin_settings'),
     
     # Lecturer URLs
     path('', lecturer_views.home, name='home'),

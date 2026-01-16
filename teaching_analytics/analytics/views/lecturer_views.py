@@ -417,6 +417,7 @@ def settings_view(request):
 
     # Define available columns for teaching records (this is the DEFAULT order)
     available_record_columns = [
+        'lecturer',
         'subject', 
         'date', 
         'duration', 

@@ -12,46 +12,6 @@
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p class="text-gray-500 mt-1">Teaching workload overview</p>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="relative">
-          <input
-            type="text"
-            placeholder="Search..."
-            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none w-64"
-          />
-          <svg
-            class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
-          <span
-            class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-          ></span>
-        </button>
-      </div>
     </div>
 
     <!-- Stats Cards -->
@@ -78,24 +38,8 @@
           </div>
         </div>
         <div class="text-sm text-gray-500 mb-1">Active Lecturers</div>
-        <div class="text-3xl font-bold text-gray-900 mb-2">4</div>
-        <div class="text-xs text-gray-500">2 total</div>
-        <div class="flex items-center gap-1 mt-2 text-xs text-green-600">
-          <svg
-            class="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-            />
-          </svg>
-          <span>12% vs last week</span>
-        </div>
+        <div class="text-3xl font-bold text-gray-900 mb-2">{{ active_lecturers_count }}</div>
+        <div class="text-xs text-gray-500">{{ total_lecturers }} total</div>
       </div>
 
       <!-- Total Teaching Hours -->
@@ -120,24 +64,8 @@
           </div>
         </div>
         <div class="text-sm text-gray-500 mb-1">Total Teaching Hours</div>
-        <div class="text-3xl font-bold text-gray-900 mb-2">456h</div>
+        <div class="text-3xl font-bold text-gray-900 mb-2">{{ total_teaching_hours|floatformat:1 }}h</div>
         <div class="text-xs text-gray-500">This semester</div>
-        <div class="flex items-center gap-1 mt-2 text-xs text-green-600">
-          <svg
-            class="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-            />
-          </svg>
-          <span>8% vs last week</span>
-        </div>
       </div>
 
       <!-- Total Sessions -->
@@ -162,7 +90,7 @@
           </div>
         </div>
         <div class="text-sm text-gray-500 mb-1">Total Sessions</div>
-        <div class="text-3xl font-bold text-gray-900 mb-2">202</div>
+        <div class="text-3xl font-bold text-gray-900 mb-2">{{ total_sessions_count }}</div>
         <div class="text-xs text-gray-500">Recorded</div>
       </div>
 
@@ -188,8 +116,8 @@
           </div>
         </div>
         <div class="text-sm text-gray-500 mb-1">Workload Alerts</div>
-        <div class="text-3xl font-bold text-gray-900 mb-2">5</div>
-        <div class="text-xs text-gray-500">0 overloaded, 5 understaffed</div>
+        <div class="text-3xl font-bold text-gray-900 mb-2">{{ workload_alerts_count }}</div>
+        <div class="text-xs text-gray-500">{{ overload_count }} overloaded, {{ underload_count }} understaffed</div>
       </div>
     </div>
 
@@ -302,45 +230,23 @@
           <p class="text-sm text-gray-500">Teaching load distribution</p>
         </div>
         <div class="space-y-4">
+          {% for item in department_hours %}
           <div>
             <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-700">Computer Science</span>
+              <span class="text-sm text-gray-700">{{ item.department }}</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-8">
               <div
                 class="bg-indigo-600 h-8 rounded-full flex items-center justify-end pr-3"
                 style="width: 100%"
               >
-                <span class="text-xs font-semibold text-white">240</span>
+                <span class="text-xs font-semibold text-white">{{ item.hours|floatformat:1 }}h</span>
               </div>
             </div>
           </div>
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-700">Information Systems</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-8">
-              <div
-                class="bg-teal-500 h-8 rounded-full flex items-center justify-end pr-3"
-                style="width: 50%"
-              >
-                <span class="text-xs font-semibold text-white">120</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-700">Software Engineering</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-8">
-              <div
-                class="bg-orange-500 h-8 rounded-full flex items-center justify-end pr-3"
-                style="width: 70%"
-              >
-                <span class="text-xs font-semibold text-white">168</span>
-              </div>
-            </div>
-          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">No teaching hours recorded yet.</p>
+          {% endfor %}
         </div>
       </div>
     </div>
@@ -355,7 +261,7 @@
           <p class="text-sm text-gray-500">Predicted semester outcomes</p>
         </div>
         <div class="space-y-4">
-          <!-- Lecturer 1 -->
+          {% for prediction in workload_status %}
           <div
             class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
           >
@@ -363,91 +269,23 @@
               <div
                 class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold"
               >
-                DSJ
+                {{ prediction.lecturer.user.first_name|first }}{{ prediction.lecturer.user.last_name|first }}
               </div>
               <div>
-                <div class="font-semibold text-gray-900">Dr. Sarah Johnson</div>
+                <div class="font-semibold text-gray-900">{{ prediction.lecturer.user.get_full_name }}</div>
                 <div class="text-sm text-gray-500">
-                  120h completed • 180.5h predicted
+                  {{ prediction.current_minutes|floatformat:1 }}h completed • {{ prediction.predicted_total_minutes|floatformat:1 }}h predicted
                 </div>
               </div>
             </div>
             <span
               class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-              >Understaffed</span
+              >{{ prediction.risk_level }}</span
             >
           </div>
-
-          <!-- Lecturer 2 -->
-          <div
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-bold"
-              >
-                PMC
-              </div>
-              <div>
-                <div class="font-semibold text-gray-900">
-                  Prof. Michael Chen
-                </div>
-                <div class="text-sm text-gray-500">
-                  142.5h completed • 192.6h predicted
-                </div>
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-              >Understaffed</span
-            >
-          </div>
-
-          <!-- Lecturer 3 -->
-          <div
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-bold"
-              >
-                DEW
-              </div>
-              <div>
-                <div class="font-semibold text-gray-900">Dr. Emily Watson</div>
-                <div class="text-sm text-gray-500">
-                  104.5h completed • 167.2h predicted
-                </div>
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-              >Understaffed</span
-            >
-          </div>
-
-          <!-- Lecturer 4 -->
-          <div
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-700 font-bold"
-              >
-                DJM
-              </div>
-              <div>
-                <div class="font-semibold text-gray-900">Dr. James Miller</div>
-                <div class="text-sm text-gray-500">
-                  89.4h completed • 191.2h predicted
-                </div>
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-              >Understaffed</span
-            >
-          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">No workload predictions available.</p>
+          {% endfor %}
         </div>
       </div>
 
@@ -465,7 +303,7 @@
           >
         </div>
         <div class="space-y-4">
-          <!-- Session 1 -->
+          {% for session in recent_sessions %}
           <div class="flex gap-3">
             <div
               class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -486,139 +324,18 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-medium text-gray-900 text-sm truncate">
-                Introduction to Programming
+                {{ session.subject.subject_name }}
               </div>
-              <div class="text-xs text-gray-500">Dr. Sarah Johnson</div>
+              <div class="text-xs text-gray-500">{{ session.lecturer.user.get_full_name }}</div>
               <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Jan 7</span>
-                <span class="text-xs text-gray-500">1.5h</span>
+                <span class="text-xs text-gray-500">{{ session.date|date:"M d" }}</span>
+                <span class="text-xs text-gray-500">{{ session.duration }}</span>
               </div>
             </div>
           </div>
-
-          <!-- Session 2 -->
-          <div class="flex gap-3">
-            <div
-              class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-gray-900 text-sm truncate">
-                Data Structures
-              </div>
-              <div class="text-xs text-gray-500">Dr. Sarah Johnson</div>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Jan 7</span>
-                <span class="text-xs text-gray-500">2h</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Session 3 -->
-          <div class="flex gap-3">
-            <div
-              class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-gray-900 text-sm truncate">
-                Introduction to Programming
-              </div>
-              <div class="text-xs text-gray-500">Prof. Michael Chen</div>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Jan 7</span>
-                <span class="text-xs text-gray-500">1.5h</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Session 4 -->
-          <div class="flex gap-3">
-            <div
-              class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-gray-900 text-sm truncate">
-                Data Structures
-              </div>
-              <div class="text-xs text-gray-500">Prof. Michael Chen</div>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Jan 7</span>
-                <span class="text-xs text-gray-500">3h</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Session 5 -->
-          <div class="flex gap-3">
-            <div
-              class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-gray-900 text-sm truncate">
-                Introduction to Programming
-              </div>
-              <div class="text-xs text-gray-500">Dr. Emily Watson</div>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Jan 7</span>
-                <span class="text-xs text-gray-500">2.5h</span>
-              </div>
-            </div>
-          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">No recent sessions found.</p>
+          {% endfor %}
         </div>
       </div>
     </div>
