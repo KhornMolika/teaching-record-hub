@@ -56,3 +56,16 @@ def lecturer_required(view_func):
             return redirect('login')
     
     return wrapper
+
+def superadmin_required(view_func):
+    """
+    Only allows access to active superusers.
+    Requirements: is_active=True AND is_superuser=True
+    """
+    @login_required(login_url='login')
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_active or not request.user.is_superuser:
+            messages.error(request, "Access denied. Superadmins only.")
+            return redirect('dashboard') # Redirect to admin dashboard
+        return view_func(request, *args, **kwargs)
+    return wrapper

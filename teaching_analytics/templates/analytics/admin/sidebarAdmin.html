@@ -103,6 +103,27 @@
       </svg>
       Lecturers
     </a>
+    {% if request.user.is_superuser %}
+    <a
+      href="{% url 'manage_admins' %}"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'manage_admins' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H2v-2a4 4 0 014-4h2a4 4 0 014 4v2m-1-9a4 4 0 10-8 0 4 4 0 008 0z"
+        />
+      </svg>
+      Manage Administrators
+    </a>
+    {% endif %}
     <a
       href="{% url 'admin_teaching_records' %}"
       class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_teaching_records' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"

@@ -8,7 +8,7 @@ from django.db.models import Sum, Count, Avg
 from django.core.paginator import Paginator
 from django.db.models import Q
 from analytics.models import Lecturer, TeachingSession, WorkloadPrediction, Subject, TeachingFile, LecturerSettings
-from analytics.services.decorators import admin_required
+from analytics.services.decorators import admin_required, superadmin_required
 from analytics.utils import format_date
 
 
@@ -372,7 +372,7 @@ def create_lecturer(request):
             # Create lecturer profile
             lecturer = Lecturer.objects.create(
                 user=user,
-                lecturer_id=username,
+                lecturer_id=f"LEC{user.id:05d}",
                 department=department,
                 is_approved=True,
                 approved_by=request.user
@@ -394,3 +394,55 @@ def create_lecturer(request):
             return redirect('lecturers')
 
     return redirect('lecturers')
+
+@superadmin_required
+def manage_admins(request):
+    """Superadmin view for managing administrators."""
+    admins = User.objects.filter(is_staff=True).order_by('-is_superuser', '-date_joined')
+    
+    context = {
+        'admins': admins,
+    }
+    
+    return render(request, 'analytics/admin/manage_admins.html', context)
+
+@superadmin_required
+def create_admin(request):
+    """Superadmin view for creating a new admin."""
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        is_superuser = request.POST.get('is_superuser') == 'on'
+
+        if not all([username, email, password, first_name, last_name]):
+            messages.error(request, "All fields are required.")
+            return redirect('manage_admins')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, f"Username '{username}' already exists.")
+            return redirect('manage_admins')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, f"Email '{email}' already exists.")
+            return redirect('manage_admins')
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                is_staff=True,
+                is_superuser=is_superuser
+            )
+            messages.success(request, f"Successfully created admin {first_name} {last_name}.")
+            return redirect('manage_admins')
+        except Exception as e:
+            messages.error(request, f"Failed to create admin: {e}")
+            return redirect('manage_admins')
+
+    return redirect('manage_admins')
