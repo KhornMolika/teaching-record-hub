@@ -12,7 +12,7 @@ from django.db.models import Sum, Count, Avg
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
-from analytics.models import Lecturer, TeachingSession, WorkloadPrediction, Subject, TeachingFile, LecturerSettings
+from analytics.models import Lecturer, TeachingSession, WorkloadPrediction, Subject, TeachingFile, LecturerSettings, AdminSettings
 from analytics.services.decorators import admin_required, superadmin_required
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from analytics.utils import format_date
@@ -222,19 +222,26 @@ def admin_teaching_records(request):
             messages.error(request, "Selected lecturer not found.")
             return redirect('admin_teaching_records')
 
-    # Always use the admin's settings
+    # Get admin's personal view settings (like sort order, columns)
     try:
-        admin_lecturer, created = Lecturer.objects.get_or_create(user=request.user)
-        settings, created = LecturerSettings.objects.get_or_create(lecturer=admin_lecturer)
+        admin_as_lecturer, _ = Lecturer.objects.get_or_create(user=request.user)
+        view_settings, _ = LecturerSettings.objects.get_or_create(lecturer=admin_as_lecturer)
     except Exception as e:
-        messages.error(request, f"Could not load admin settings: {e}")
-        settings = LecturerSettings() # Fallback to default settings
+        messages.error(request, f"Could not load your personal view settings: {e}")
+        view_settings = LecturerSettings()  # Fallback
+
+    # Get system-wide admin settings for date format
+    try:
+        system_settings = AdminSettings.objects.get(user=request.user)
+    except AdminSettings.DoesNotExist:
+        # If settings don't exist, create them
+        system_settings, _ = AdminSettings.objects.get_or_create(user=request.user)
 
 
     # Base query for sessions
     sessions_query = TeachingSession.objects.select_related(
         'subject', 'teaching_file', 'lecturer__user'
-    ).order_by(settings.default_sort_order)
+    ).order_by(view_settings.default_sort_order)
 
     # Filter by selected lecturer
     if selected_lecturer:
@@ -312,14 +319,14 @@ def admin_teaching_records(request):
             session.minutes_part = 0
             session.hours_decimal = 0
         
-        session.formatted_date = format_date(session.date, settings.date_format)
+        session.formatted_date = format_date(session.date, system_settings.default_date_format)
         sessions_list.append(session)
     
     total_hours = round(total_minutes / 60, 2) if total_minutes else 0
     avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
     
     # Pagination
-    paginator = Paginator(sessions_list, settings.records_per_page)
+    paginator = Paginator(sessions_list, view_settings.records_per_page)
     page_number = request.GET.get('page', 1)
     sessions = paginator.get_page(page_number)
     
@@ -351,7 +358,7 @@ def admin_teaching_records(request):
     if 'page' in filter_params:
         del filter_params['page']
 
-    ordered_columns = settings.default_columns.split(',') if settings.default_columns else []
+    ordered_columns = view_settings.default_columns.split(',') if view_settings.default_columns else []
     if 'lecturer' not in ordered_columns:
         ordered_columns.insert(0, 'lecturer')
 
@@ -379,7 +386,7 @@ def admin_teaching_records(request):
             'parsed': parsed_files,
             'pending': pending_files,
         },
-        'settings': settings,
+        'settings': view_settings,
         'ordered_columns': ordered_columns,
         'active_tab': active_tab,
     }
@@ -489,8 +496,30 @@ def admin_workload_prediction(request):
 
 @admin_required
 def admin_settings(request):
-    """Admin view for settings."""
-    return render(request, 'analytics/admin/settings.html')
+    """Admin view for managing system-wide settings."""
+    settings, created = AdminSettings.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        settings.default_theme = request.POST.get('default_theme', 'light')
+        settings.default_date_format = request.POST.get('default_date_format', 'YYYY-MM-DD')
+        settings.default_records_per_page = int(request.POST.get('default_records_per_page', 15))
+        
+        settings.default_workload_target = int(request.POST.get('default_workload_target', 20))
+        settings.risk_threshold_overload = int(request.POST.get('risk_threshold_overload', 125))
+        settings.risk_threshold_underload = int(request.POST.get('risk_threshold_underload', 75))
+        
+        settings.allowed_file_types = request.POST.get('allowed_file_types', '.xlsb,.zip')
+        settings.max_file_size_mb = int(request.POST.get('max_file_size_mb', 15))
+        settings.semester_workload_target = int(request.POST.get('semester_workload_target', 180))
+
+        settings.save()
+        messages.success(request, "Admin settings have been successfully updated.")
+        return redirect('admin_settings')
+
+    context = {
+        'settings': settings,
+    }
+    return render(request, 'analytics/admin/settings.html', context)
 
 from django.contrib.auth.hashers import make_password
 
@@ -627,3 +656,29 @@ def create_admin(request):
             return redirect('manage_admins')
 
     return redirect('manage_admins')
+
+
+@superadmin_required
+def edit_admin(request, user_id):
+    """Superadmin view for editing an administrator's details."""
+    admin_user = get_object_or_404(User, id=user_id, is_staff=True)
+    if request.method == 'POST':
+        admin_user.first_name = request.POST.get('first_name', '').strip()
+        admin_user.last_name = request.POST.get('last_name', '').strip()
+        admin_user.email = request.POST.get('email', '').strip()
+        
+        # Prevent a user from removing their own superuser status
+        if admin_user == request.user and not request.POST.get('is_superuser') == 'on':
+            messages.warning(request, "You cannot remove your own superuser status.")
+        else:
+            admin_user.is_superuser = request.POST.get('is_superuser') == 'on'
+        
+        admin_user.save()
+        
+        messages.success(request, f"Successfully updated details for {admin_user.get_full_name()}.")
+        return redirect('manage_admins')
+        
+    context = {
+        'admin': admin_user,
+    }
+    return render(request, 'analytics/admin/edit_admin.html', context)

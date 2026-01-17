@@ -67,43 +67,33 @@
                 <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">Inactive</span>
                 {% endif %}
               </td>
-              <td class="px-6 py-4">
-                <a href="#" class="font-medium text-indigo-600 hover:underline">Edit</a>
-                {% if admin.is_active %}
-                    {% if admin != request.user %}
-                    <form
-                      action="{% url 'deactivate_admin' admin.id %}"
-                      method="post"
-                      class="inline ml-4"
-                    >
-                      {% csrf_token %}
-                      <button
-                        type="submit"
-                        class="font-medium text-red-600 hover:underline"
-                        onclick="return confirm('Are you sure you want to deactivate this admin user? They will no longer be able to log in.')"
-                      >
-                        Deactivate
-                      </button>
-                    </form>
+            <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                    <a href="{% url 'edit_admin' admin.id %}" class="text-blue-500 hover:text-blue-700" title="Edit">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </a>
+                    {% if admin.is_active %}
+                        {% if admin != request.user %}
+                        <form action="{% url 'deactivate_admin' admin.id %}" method="post" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-500 hover:text-red-700" title="Deactivate" onclick="return confirm('Are you sure you want to deactivate this admin user? They will no longer be able to log in.')">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-gray-400 cursor-not-allowed" title="Cannot deactivate self">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                        </span>
+                        {% endif %}
                     {% else %}
-                    <span class="font-medium text-gray-400 cursor-not-allowed ml-4">Cannot Deactivate Self</span>
+                    <form action="{% url 'activate_admin' admin.id %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-green-500 hover:text-green-700" title="Activate" onclick="return confirm('Are you sure you want to activate this admin user?')">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </button>
+                    </form>
                     {% endif %}
-                {% else %}
-                  <form
-                    action="{% url 'activate_admin' admin.id %}"
-                    method="post"
-                    class="inline ml-4"
-                  >
-                    {% csrf_token %}
-                    <button
-                      type="submit"
-                      class="font-medium text-green-600 hover:underline"
-                      onclick="return confirm('Are you sure you want to activate this admin user?')"
-                    >
-                      Activate
-                    </button>
-                  </form>
-                {% endif %}
+                </div>
               </td>
             </tr>
             {% empty %}

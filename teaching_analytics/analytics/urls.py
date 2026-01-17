@@ -24,6 +24,7 @@ urlpatterns = [
     path('administrator/create-admin/', admin_views.create_admin, name='create_admin'),
     path('administrator/deactivate-admin/<int:user_id>/', admin_views.deactivate_admin, name='deactivate_admin'),
     path('administrator/activate-admin/<int:user_id>/', admin_views.activate_admin, name='activate_admin'),
+    path('administrator/edit-admin/<int:user_id>/', admin_views.edit_admin, name='edit_admin'),
     
     # Lecturer URLs
     path('', lecturer_views.home, name='home'),

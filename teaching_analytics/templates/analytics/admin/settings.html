@@ -1,22 +1,97 @@
-{% extends "../base.html" %} {% block title %}Admin Settings{% endblock %}
-{%block content %}
-<div class="flex min-h-screen bg-gray-50">
-  <!-- Include Admin Sidebar -->
-  {% include "./sidebarAdmin.html" %}
+{% extends "../base.html" %}
+{% load custom_filters %}
+{% block title %}Admin Settings{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+  <!-- Include Sidebar -->
+  {% include "analytics/admin/sidebarAdmin.html" %}
 
   <!-- Main Content -->
-  <div class="flex-1 ml-64 py-8 px-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Admin Settings</h1>
-        <p class="text-gray-500 mt-1">Configure system-wide settings.</p>
-      </div>
-    </div>
+  <div class="flex-1 ml-64 py-8 px-20" data-aos="fade-up">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Admin Settings</h1>
 
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <p class="text-gray-700">Content for Admin Settings will go here.</p>
-    </div>
+    <form method="post" id="settings-form">
+      {% csrf_token %}
+
+      <!-- System-wide Settings -->
+      <section class="mb-10 p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700" data-aos="fade-up">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">System-wide Defaults</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Theme Selector -->
+            <div class="mb-6">
+              <label for="id_default_theme" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Default Theme:</label>
+              <select id="id_default_theme" name="default_theme" class="shadow border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+                <option value="light" {% if settings.default_theme == 'light' %}selected{% endif %}>☀️ Light Mode</option>
+                <option value="dark" {% if settings.default_theme == 'dark' %}selected{% endif %}>🌙 Dark Mode</option>
+                <option value="auto" {% if settings.default_theme == 'auto' %}selected{% endif %}>🌓 Auto (System Preference)</option>
+              </select>
+            </div>
+
+            <!-- Date Format Selector -->
+            <div class="mb-6">
+              <label for="id_default_date_format" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Default Date Format:</label>
+              <select id="id_default_date_format" name="default_date_format" class="shadow border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+                <option value="YYYY-MM-DD" {% if settings.default_date_format == 'YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD</option>
+                <option value="MM/DD/YYYY" {% if settings.default_date_format == 'MM/DD/YYYY' %}selected{% endif %}>MM/DD/YYYY</option>
+                <option value="DD/MM/YYYY" {% if settings.default_date_format == 'DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY</option>
+              </select>
+            </div>
+
+            <!-- Records per page -->
+            <div class="mb-4">
+              <label for="id_default_records_per_page" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Default Records Per Page:</label>
+              <input type="number" id="id_default_records_per_page" name="default_records_per_page" min="5" max="100" value="{{ settings.default_records_per_page }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+        </div>
+      </section>
+
+      <!-- Workload Settings -->
+      <section class="mb-10 p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="100">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Workload Calculation</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="mb-4">
+              <label for="id_default_workload_target" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Default Workload Target (hours):</label>
+              <input type="number" id="id_default_workload_target" name="default_workload_target" min="0" value="{{ settings.default_workload_target }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div class="mb-4">
+              <label for="id_risk_threshold_overload" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Overload Threshold (%):</label>
+              <input type="number" id="id_risk_threshold_overload" name="risk_threshold_overload" min="100" value="{{ settings.risk_threshold_overload }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div class="mb-4">
+              <label for="id_risk_threshold_underload" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Underload Threshold (%):</label>
+              <input type="number" id="id_risk_threshold_underload" name="risk_threshold_underload" min="0" max="100" value="{{ settings.risk_threshold_underload }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div class="mb-4">
+              <label for="id_semester_workload_target" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Semester Workload Target (hours):</label>
+              <input type="number" id="id_semester_workload_target" name="semester_workload_target" min="0" value="{{ settings.semester_workload_target }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+        </div>
+      </section>
+
+      <!-- File Upload Settings -->
+      <section class="mb-10 p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="200">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">File Upload Rules</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="mb-4">
+              <label for="id_allowed_file_types" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Allowed File Types:</label>
+              <input type="text" id="id_allowed_file_types" name="allowed_file_types" value="{{ settings.allowed_file_types }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Comma-separated list of allowed file extensions (e.g., .xlsb,.zip).</p>
+            </div>
+            <div class="mb-4">
+              <label for="id_max_file_size_mb" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Max File Size (MB):</label>
+              <input type="number" id="id_max_file_size_mb" name="max_file_size_mb" min="1" value="{{ settings.max_file_size_mb }}" class="shadow appearance-none border border-gray-300 dark:border-gray-600 rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-teal-500">
+            </div>
+        </div>
+      </section>
+
+      <div class="flex items-center justify-start">
+        <button type="submit" class="bg-teal-500 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200">
+          💾 Save Changes
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

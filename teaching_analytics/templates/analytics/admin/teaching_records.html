@@ -90,14 +90,49 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                 <select name="lecturer" onchange="this.form.submit()" class="pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-300 focus:scale-105">
-                    <option value="">All Lecturers</option>
-                    {% for lecturer in lecturers %}
-                        <option value="{{ lecturer.id }}" {% if selected_lecturer.id == lecturer.id %}selected{% endif %}>
-                            {{ lecturer.user.get_full_name|default:lecturer.user.username }}
-                        </option>
-                    {% endfor %}
-                </select>
+                 {{ lecturers_json|json_script:"filter-lecturers-data" }}
+                <div x-data="{
+                    open: false,
+                    search: '',
+                    lecturers: JSON.parse(document.getElementById('filter-lecturers-data').textContent),
+                    selected: {{ selected_lecturer.id|default:'null' }},
+                    get filteredLecturers() {
+                        if (this.search === '') {
+                            return this.lecturers;
+                        }
+                        return this.lecturers.filter(
+                            l => l.name.toLowerCase().includes(this.search.toLowerCase())
+                        )
+                    },
+                    init() {
+                        // Set initial selected value if available
+                        if (this.selected) {
+                            this.selected = this.lecturers.find(l => l.id == this.selected);
+                        }
+                    }
+                }" @click.away="open = false" class="relative w-full max-w-xs">
+                    <input type="hidden" name="lecturer" x-model="selected ? selected.id : ''">
+                    <button type="button" @click="open = !open" class="w-full text-left pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-300 flex justify-between items-center">
+                        <span x-text="selected ? selected.name : 'All Lecturers'"></span>
+                        <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a.75.75 0 01.53.22l3.5 3.5a.75.75 0 01-1.06 1.06L10 4.81 6.53 8.28a.75.75 0 01-1.06-1.06l3.5-3.5A.75.75 0 0110 3zm-3.78 9.22a.75.75 0 011.06 0L10 15.19l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-1.06 0l-4-4a.75.75 0 010-1.06z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div x-show="open" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto" x-cloak>
+                        <div class="p-2">
+                            <input type="text" x-model="search" placeholder="Search lecturers..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-gray-700 dark:text-gray-100">
+                        </div>
+                        <ul>
+                            <li @click="selected = null; open = false; $dispatch('change');" class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" :class="!selected ? 'bg-gray-100 dark:bg-gray-700' : ''">All Lecturers</li>
+                            <template x-for="lecturer in filteredLecturers" :key="lecturer.id">
+                                <li @click="selected = lecturer; open = false; $dispatch('change');" class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" x-text="lecturer.name" :class="selected && selected.id == lecturer.id ? 'bg-gray-100 dark:bg-gray-700' : ''"></li>
+                            </template>
+                            <template x-if="filteredLecturers.length === 0">
+                                <li class="px-4 py-2 text-gray-500">No lecturers found.</li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg 
                                               hover:bg-teal-700 dark:hover:bg-teal-600 transition-all duration-300 
                                               hover:scale-105 active:scale-95">

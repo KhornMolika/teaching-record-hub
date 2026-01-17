@@ -82,6 +82,28 @@ class LecturerSettings(models.Model):
         return f"Settings for {self.lecturer.user.username}"
 
 
+class AdminSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_settings')
+    
+    # System-wide defaults
+    default_theme = models.CharField(max_length=20, default='light', choices=[('light', 'Light'), ('dark', 'Dark'), ('auto', 'Auto')])
+    default_date_format = models.CharField(max_length=20, default='YYYY-MM-DD', help_text="e.g., YYYY-MM-DD, DD/MM/YYYY")
+    default_records_per_page = models.PositiveSmallIntegerField(default=15)
+
+    # Workload settings
+    default_workload_target = models.PositiveSmallIntegerField(default=20, help_text="Default weekly workload target in hours for new lecturers.")
+    risk_threshold_overload = models.PositiveSmallIntegerField(default=125, help_text="Percentage above target to be considered 'Overload' (e.g., 125%).")
+    risk_threshold_underload = models.PositiveSmallIntegerField(default=75, help_text="Percentage below target to be considered 'Underload' (e.g., 75%).")
+
+    # File upload settings
+    allowed_file_types = models.CharField(max_length=100, default='.xlsb,.zip', help_text="Comma-separated list of allowed file extensions.")
+    max_file_size_mb = models.PositiveSmallIntegerField(default=15, help_text="Maximum file size in MB.")
+    semester_workload_target = models.PositiveSmallIntegerField(default=180, help_text="Target workload in hours for the entire semester.")
+
+    def __str__(self):
+        return f"Admin Settings for {self.user.username}"
+
+
 # Enables per‑subject analytics
 class Subject(models.Model):
     subject_code = models.CharField(max_length=20, unique=True)

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
-from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, LecturerSettings
+from analytics.models import TeachingSession, Lecturer, Subject, TeachingFile, LecturerSettings, AdminSettings
 from analytics.services.parser import parse_xlsb_and_create_sessions
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import time, datetime, timedelta
@@ -61,7 +61,8 @@ def home(request):
     predicted_total_hours = round(average_weekly_hours * SEMESTER_WEEKS, 1)
     
     # --- Progress Calculation ---
-    TARGET_HOURS = 180  # Semester target
+    admin_settings = AdminSettings.objects.first()
+    TARGET_HOURS = admin_settings.semester_workload_target if admin_settings else 180
     semester_progress = min(round((total_hours_completed / TARGET_HOURS) * 100, 2), 100) if TARGET_HOURS > 0 else 0
 
     # --- Chart Data: Weekly Hours ---
