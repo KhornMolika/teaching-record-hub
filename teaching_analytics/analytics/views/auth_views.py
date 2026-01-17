@@ -69,8 +69,7 @@ def register_view(request):
                     theme='light',
                     date_format='YYYY-MM-DD',
                     enable_notifications=True,
-                    records_per_page=10,
-                    workload_target=15
+                    records_per_page=10
                 )
                 
                 # Auto-login the user
