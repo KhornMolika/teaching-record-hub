@@ -160,16 +160,23 @@ def lecturers(request):
 def approve_lecturer(request, lecturer_id):
     """Approve a lecturer's account and activate their user account."""
     lecturer = get_object_or_404(Lecturer, id=lecturer_id)
-    if not lecturer.is_approved or not lecturer.user.is_active:
-        lecturer.is_approved = True
-        lecturer.approved_by = request.user
-        lecturer.approved_at = timezone.now()
-        lecturer.user.is_active = True # Activate the associated User account
-        lecturer.user.save()
-        lecturer.save()
-        messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been approved and activated.")
-    else:
-        messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already approved and active.")
+    
+    with transaction.atomic():
+        if not lecturer.is_approved or not lecturer.user.is_active:
+            lecturer.is_approved = True
+            lecturer.approved_by = request.user
+            lecturer.approved_at = timezone.now()
+            
+            lecturer.user.is_active = True # Activate the associated User account
+            lecturer.user.save()
+            lecturer.user.refresh_from_db() # Refresh User object
+            
+            lecturer.save()
+            lecturer.refresh_from_db() # Refresh Lecturer object
+            
+            messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been approved and activated.")
+        else:
+            messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already approved and active.")
     
     return redirect('lecturers')
 
@@ -200,6 +207,32 @@ def deactivate_lecturer(request, lecturer_id):
         messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been deactivated.")
     else:
         messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already deactivated.")
+    
+    return redirect('lecturers')
+
+@admin_required
+@require_POST
+def activate_lecturer(request, lecturer_id):
+    """Activate a deactivated lecturer's account."""
+    lecturer = get_object_or_404(Lecturer, id=lecturer_id)
+    
+    with transaction.atomic():
+        # Only proceed if the lecturer is not currently approved and active
+        if not lecturer.is_approved or not lecturer.user.is_active:
+            lecturer.is_approved = True  # Set to approved
+            lecturer.approved_by = request.user # Record who reactivated
+            lecturer.approved_at = timezone.now() # Record when reactivated
+            
+            lecturer.user.is_active = True # Activate the associated User account
+            lecturer.user.save()
+            lecturer.user.refresh_from_db() # Refresh User object
+            
+            lecturer.save()
+            lecturer.refresh_from_db() # Refresh Lecturer object
+            
+            messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been reactivated.")
+        else:
+            messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already active.")
     
     return redirect('lecturers')
 

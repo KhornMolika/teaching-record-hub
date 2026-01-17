@@ -13,6 +13,7 @@ urlpatterns = [
     path('lecturers/', admin_views.lecturers, name='lecturers'),
     path('lecturers/approve/<int:lecturer_id>/', admin_views.approve_lecturer, name='approve_lecturer'),
     path('lecturers/deactivate/<int:lecturer_id>/', admin_views.deactivate_lecturer, name='deactivate_lecturer'),
+    path('lecturers/activate/<int:lecturer_id>/', admin_views.activate_lecturer, name='activate_lecturer'),
     path('lecturers/edit/<int:lecturer_id>/', admin_views.edit_lecturer, name='edit_lecturer'),
     path('lecturers/create/', admin_views.create_lecturer, name='create_lecturer'),
     path('administrator/teaching-records/', admin_views.admin_teaching_records, name='admin_teaching_records'),
