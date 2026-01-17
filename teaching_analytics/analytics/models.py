@@ -74,9 +74,6 @@ class LecturerSettings(models.Model):
         max_length=20, default='weekly',
         choices=[('weekly', 'Weekly Hours'), ('monthly', 'Monthly Hours'), ('semester', 'Per Semester')]
     )
-    workload_target = models.PositiveSmallIntegerField(
-        default=15, help_text="Weekly workload target in hours"
-    )
 
     def __str__(self):
         return f"Settings for {self.lecturer.user.username}"

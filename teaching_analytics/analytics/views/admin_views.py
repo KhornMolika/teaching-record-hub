@@ -403,6 +403,7 @@ def admin_teaching_records(request):
             'pending': pending_files,
         },
         'settings': view_settings,
+        'system_settings': system_settings,
         'ordered_columns': ordered_columns,
         'active_tab': active_tab,
     }
@@ -423,6 +424,30 @@ def admin_upload_files(request):
     
     if not files:
         messages.error(request, "Please select a file to upload.")
+        return redirect('admin_teaching_records')
+
+    # Get admin settings for validation
+    try:
+        admin_settings = AdminSettings.objects.get(user=request.user)
+    except AdminSettings.DoesNotExist:
+        messages.error(request, "File upload settings are not configured.")
+        return redirect('admin_teaching_records')
+
+    max_size_bytes = admin_settings.max_file_size_mb * 1024 * 1024
+    allowed_types = [ft.strip().lower() for ft in admin_settings.allowed_file_types.split(',')]
+
+    validation_errors = []
+    for file in files:
+        if file.size > max_size_bytes:
+            validation_errors.append(f"'{file.name}' exceeds the maximum file size of {admin_settings.max_file_size_mb} MB.")
+        
+        file_ext = f".{file.name.split('.')[-1].lower()}"
+        if file_ext not in allowed_types:
+            validation_errors.append(f"'{file.name}' has an invalid file type. Allowed types are {', '.join(allowed_types)}.")
+
+    if validation_errors:
+        for error in validation_errors:
+            messages.error(request, error)
         return redirect('admin_teaching_records')
 
     try:
@@ -456,6 +481,7 @@ def admin_upload_files(request):
                 teaching_file = TeachingFile.objects.create(lecturer=lecturer, file_name=file)
                 uploaded_files.append(teaching_file)
             else:
+                # This should be caught by the validation above, but is kept as a safeguard
                 errors.append(f"'{file.name}' is not a valid XLSB or ZIP file and was skipped.")
 
         if errors:
@@ -610,8 +636,7 @@ def create_lecturer(request):
                 theme='light',
                 date_format='YYYY-MM-DD',
                 enable_notifications=True,
-                records_per_page=10,
-                workload_target=15
+                records_per_page=10
             )
             messages.success(request, f"Successfully created lecturer {first_name} {last_name}.")
             return redirect('lecturers')

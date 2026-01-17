@@ -707,6 +707,14 @@
     <form method="post" enctype="multipart/form-data" action="{% url 'upload_files' %}" id="uploadForm">
       {% csrf_token %}
       
+      <div class="mb-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">File Upload Rules</h4>
+        <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+          <li>- Maximum file size: <strong>{{ admin_settings.max_file_size_mb }} MB</strong></li>
+          <li>- Allowed file types: <strong>{{ admin_settings.allowed_file_types }}</strong></li>
+        </ul>
+      </div>
+      
       <div class="mb-6">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Select XLSB Files or ZIP Archive <span class="text-red-500 dark:text-red-400">*</span>

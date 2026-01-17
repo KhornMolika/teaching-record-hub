@@ -137,8 +137,17 @@ def workload(request):
     weeks_with_sessions = all_sessions.values("week_number").distinct().count()
     average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
     
+    # Get admin settings for workload target
+    try:
+        admin_settings = AdminSettings.objects.get(user=request.user.admin_settings.user)
+        TARGET_HOURS = admin_settings.default_workload_target
+    except (AdminSettings.DoesNotExist, AttributeError):
+        # Fallback if settings don't exist or user is not an admin
+        admin_settings = AdminSettings.objects.first()
+        TARGET_HOURS = admin_settings.default_workload_target if admin_settings else 20
+
+
     SEMESTER_WEEKS = 14
-    TARGET_HOURS = settings.workload_target # Use workload_target from settings
     weeks_remaining = max(0, SEMESTER_WEEKS - weeks_with_sessions)
     predicted_total_hours = round(total_hours_completed + (average_weekly_hours * weeks_remaining), 1)
     variance_from_target = predicted_total_hours - TARGET_HOURS
@@ -374,6 +383,9 @@ def teaching_records(request):
     # Get ordered columns from settings
     ordered_columns = settings.default_columns.split(',') if settings.default_columns else []
     
+    # Get admin settings for file upload rules
+    admin_settings = AdminSettings.objects.first()
+
     context = {
         'sessions': sessions,
         'subjects': subjects,
@@ -397,6 +409,7 @@ def teaching_records(request):
             'pending': pending_files,
         },
         'settings': settings,
+        'admin_settings': admin_settings,
         'ordered_columns': ordered_columns,
     }
     
@@ -456,13 +469,6 @@ def settings_view(request):
         settings.default_sort_order = request.POST.get('default_sort_order', settings.default_sort_order)
         settings.workload_display = request.POST.get('workload_display', settings.workload_display)
         
-        try:
-            posted_workload_target = request.POST.get('workload_target')
-            if posted_workload_target is not None and posted_workload_target != '':
-                settings.workload_target = int(posted_workload_target)
-        except ValueError:
-            messages.error(request, "Invalid value for workload target. Please enter a number.")
-
         settings.save()
         messages.success(request, "Settings updated successfully!")
         return redirect('settings')
@@ -481,27 +487,48 @@ def upload_files(request):
     """Handle file uploads from the teaching records page with ZIP support"""
     if request.method != 'POST':
         return redirect('teaching_records')
-    
-    # Get current tab from referer or default to files
+
     current_tab = request.GET.get('tab', 'files')
-    
     try:
-        # Get lecturer associated with current user
         lecturer = Lecturer.objects.get(user=request.user)
     except Lecturer.DoesNotExist:
         messages.error(request, "No lecturer profile found for your account.")
         return redirect(f'teaching_records?tab={current_tab}')
-    
+
     files = request.FILES.getlist('files')
     auto_parse = request.POST.get('auto_parse') == 'on'
-    
+
     if not files:
         messages.error(request, "Please select at least one file.")
+        return redirect(f'teaching_records?tab={current_tab}')
+
+    # Get admin settings for validation
+    admin_settings = AdminSettings.objects.first()
+    if not admin_settings:
+        messages.error(request, "File upload settings are not configured. Please contact an admin.")
+        return redirect(f'teaching_records?tab={current_tab}')
+
+    max_size_bytes = admin_settings.max_file_size_mb * 1024 * 1024
+    allowed_types = [ft.strip() for ft in admin_settings.allowed_file_types.split(',')]
+
+    errors = []
+    for file in files:
+        # Validate file size
+        if file.size > max_size_bytes:
+            errors.append(f"'{file.name}' is too large. Maximum size is {admin_settings.max_file_size_mb} MB.")
+        
+        # Validate file type
+        file_extension = f".{file.name.split('.')[-1].lower()}"
+        if file_extension not in allowed_types:
+            errors.append(f"'{file.name}' has an invalid file type. Allowed types are: {', '.join(allowed_types)}.")
+
+    if errors:
+        for error in errors:
+            messages.error(request, error)
         return redirect(f'teaching_records?tab={current_tab}')
     
     uploaded_files = []
     total_created = 0
-    errors = []
     empty_files_found = False
     
     # Process each uploaded file
@@ -559,7 +586,8 @@ def upload_files(request):
             except Exception as e:
                 errors.append(f"{file.name}: {str(e)}")
         else:
-            errors.append(f"{file.name}: Not an XLSB or ZIP file")
+            # This case should be caught by the initial validation, but as a fallback:
+            errors.append(f"'{file.name}' is not a valid file type.")
     
     # Auto-parse if requested
     if auto_parse and uploaded_files:
