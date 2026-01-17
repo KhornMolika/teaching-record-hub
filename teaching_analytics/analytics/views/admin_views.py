@@ -737,3 +737,18 @@ def edit_admin(request, user_id):
         'admin': admin_user,
     }
     return render(request, 'analytics/admin/edit_admin.html', context)
+
+@admin_required
+def recalculate_workload_predictions(request):
+    """
+    Manually triggers the workload prediction calculation for all lecturers.
+    """
+    from analytics.services.workload_service import update_workload_predictions
+    
+    try:
+        update_workload_predictions()
+        messages.success(request, "Successfully recalculated workload predictions for all approved lecturers.")
+    except Exception as e:
+        messages.error(request, f"An error occurred while recalculating predictions: {e}")
+        
+    return redirect('admin_workload_prediction')

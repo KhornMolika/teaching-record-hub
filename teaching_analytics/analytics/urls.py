@@ -19,6 +19,7 @@ urlpatterns = [
     path('administrator/teaching-records/upload/', admin_views.admin_upload_files, name='admin_upload_files'),
 
     path('administrator/workload-prediction/', admin_views.admin_workload_prediction, name='admin_workload_prediction'),
+    path('administrator/workload-prediction/recalculate/', admin_views.recalculate_workload_predictions, name='recalculate_workload_predictions'),
     path('administrator/settings/', admin_views.admin_settings, name='admin_settings'),
     path('administrator/manage-admins/', admin_views.manage_admins, name='manage_admins'),
     path('administrator/create-admin/', admin_views.create_admin, name='create_admin'),

@@ -339,6 +339,12 @@ def parse_xlsb_and_create_sessions(teaching_file):
     # Mark file as parsed
     teaching_file.is_parsed = True
     teaching_file.save()
+    
+    # After sessions are created/updated, recalculate workload predictions
+    from .workload_service import update_workload_predictions
+    print("Recalculating workload predictions...")
+    update_workload_predictions()
+    print("✓ Workload predictions updated.")
 
     print(f"\n" + "="*80)
     print(f"PARSING COMPLETE")
