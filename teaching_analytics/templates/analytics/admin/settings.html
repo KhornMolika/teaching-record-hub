@@ -53,6 +53,57 @@
         </div>
       </section>
 
+      <!-- Teaching Records Specific Settings -->
+      <section class="mb-10 p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="100">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Teaching Records Settings</h2>
+
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold">Default columns to display:</label>
+            <button
+              type="button"
+              onclick="resetColumnOrder()"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset to Default
+            </button>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+            Drag and drop to reorder columns. Check/uncheck to show/hide.
+          </p>
+
+          <!-- Sortable column list -->
+          <div id="column-list" class="space-y-2">
+              {% for column in available_record_columns %}
+                {% comment %} Determine if the column should be checked based on saved settings {% endcomment %}
+                {% if column %}
+                <div class="column-item flex items-center p-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200" data-column="{{ column }}">
+                    <!-- Drag Handle Icon -->
+                    <svg class="drag-handle w-5 h-5 text-gray-400 dark:text-gray-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                    
+                    <!-- Checkbox -->
+                    <input type="checkbox" name="default_columns_checkbox" value="{{ column }}" class="form-checkbox h-4 w-4 text-teal-600 mr-3 cursor-pointer"
+                           {% if column in settings.default_columns %}checked{% endif %}>
+                    
+                    <!-- Column Name -->
+                    <span class="text-gray-700 dark:text-gray-300 font-medium flex-1">{{ column|capfirst }}</span>
+                    
+                    <!-- Hidden input to track order -->
+                    <input type="hidden" class="column-order" name="column_order" value="{{ column }}">
+                </div>
+                {% endif %}
+              {% endfor %}
+          </div>
+        </div>
+      </section>
+
       <!-- Workload Settings -->
       <section class="mb-10 p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="100">
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Workload Calculation</h2>
@@ -101,14 +152,24 @@
   </div>
 </div>
 
+</style>
+
+{{ settings.default_columns|json_script:"initial-admin-columns" }}
+
 <script>
+// Access the initial default columns from Django context via the script tag
+const initialAdminColumnsData = JSON.parse(document.getElementById('initial-admin-columns').textContent);
+
+// Store the default column order - THIS IS THE DEFAULT ORDER FOR RESET
+const DEFAULT_COLUMN_ORDER = ['lecturer', 'subject', 'date', 'duration', 'lecture_type', 'time_in', 'time_out', 'source_file'];
+
 // Preview theme - INSTANT PREVIEW (before save)
 function previewTheme(theme) {
     const html = document.documentElement;
-    
+
     // Remove existing theme
     html.classList.remove('dark');
-    
+
     if (theme === 'dark') {
         html.classList.add('dark');
     } else if (theme === 'auto') {
@@ -118,8 +179,166 @@ function previewTheme(theme) {
         }
     }
     // 'light' = do nothing
-    
+
     console.log('Theme preview:', theme);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const columnList = document.getElementById('column-list');
+    if (!columnList) {
+        console.warn("Column list element not found. Drag and drop functionality will not be initialized.");
+        return;
+    }
+
+    let draggedElement = null;
+    let draggedIndex = null;
+
+    // Get all column items
+    // Re-query in case elements were added/removed dynamically
+    function getAllColumnItems() {
+        return columnList.querySelectorAll('.column-item');
+    }
+
+    function addDragEventListeners() {
+        getAllColumnItems().forEach(item => {
+            if (!item.hasAttribute('data-drag-listeners-added')) { // Prevent adding multiple listeners
+                item.setAttribute('draggable', 'true');
+
+                item.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    draggedIndex = Array.from(columnList.children).indexOf(this);
+                    this.classList.add('dragging');
+                    this.style.opacity = '0.4';
+
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.innerHTML);
+                });
+
+                item.addEventListener('dragover', function(e) {
+                    if (e.preventDefault) {
+                        e.preventDefault();
+                    }
+                    e.dataTransfer.dropEffect = 'move';
+                    return false;
+                });
+
+                item.addEventListener('dragenter', function(e) {
+                    if (this !== draggedElement) {
+                        this.classList.add('drag-over');
+                    }
+                });
+
+                item.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+
+                item.addEventListener('drop', function(e) {
+                    if (e.stopPropagation) {
+                        e.stopPropagation();
+                    }
+
+                    if (draggedElement !== this) {
+                        const allItems = Array.from(getAllColumnItems());
+                        const targetIndex = allItems.indexOf(this);
+
+                        if (draggedIndex < targetIndex) {
+                            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                        } else {
+                            this.parentNode.insertBefore(draggedElement, this);
+                        }
+                        updateColumnOrder();
+                    }
+
+                    this.classList.remove('drag-over');
+                    return false;
+                });
+
+                item.addEventListener('dragend', function(e) {
+                    this.style.opacity = '1';
+                    this.classList.remove('dragging');
+                    getAllColumnItems().forEach(i => i.classList.remove('drag-over'));
+                });
+                item.setAttribute('data-drag-listeners-added', 'true');
+            }
+        });
+    }
+
+    /**
+     * Update the hidden column_order inputs and the form's default_columns field
+     */
+    function updateColumnOrder() {
+        const items = getAllColumnItems();
+        const orderedColumns = [];
+        items.forEach(item => {
+            const columnValue = item.getAttribute('data-column');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                 orderedColumns.push(columnValue);
+            }
+        });
+
+        // Update a hidden input field that will be submitted with the form
+        // This ensures only selected and ordered columns are sent
+        let hiddenInput = document.getElementById('id_default_columns_ordered');
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = 'id_default_columns_ordered';
+            hiddenInput.name = 'default_columns'; // This name should match what Django expects
+            columnList.parentNode.appendChild(hiddenInput);
+        }
+        hiddenInput.value = orderedColumns.join(',');
+
+        console.log('Current column order for submission:', hiddenInput.value);
+    }
+
+    // Add event listeners to checkboxes for live update
+    columnList.addEventListener('change', function(e) {
+        if (e.target.type === 'checkbox' && e.target.name === 'default_columns_checkbox') { // Changed name to avoid conflict
+            updateColumnOrder();
+        }
+    });
+
+    // Initialize drag event listeners
+    addDragEventListeners();
+    updateColumnOrder(); // Initialize hidden input with current order
+
+    /**
+     * Reset columns to default order
+     */
+    window.resetColumnOrder = function() {
+        if (!confirm('Reset column order to default? This will restore the original order and all default columns will be checked.')) {
+            return;
+        }
+
+        const columnList = document.getElementById('column-list');
+        columnList.innerHTML = ''; // Clear current list
+
+        // Recreate items in default order
+        DEFAULT_COLUMN_ORDER.forEach(column => {
+            // Use the globally available initialAdminColumnsData
+            const isChecked = initialAdminColumnsData.includes(column) || DEFAULT_COLUMN_ORDER.includes(column);
+
+            const item = document.createElement('div');
+            item.className = 'column-item flex items-center p-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200';
+            item.setAttribute('data-column', column);
+            item.setAttribute('draggable', 'true');
+
+            item.innerHTML = `
+                <svg class="drag-handle w-5 h-5 text-gray-400 dark:text-gray-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                </svg>
+                <input type="checkbox" name="default_columns_checkbox" value="${column}" class="form-checkbox h-4 w-4 text-teal-600 mr-3 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                <span class="text-gray-700 dark:text-gray-300 font-medium flex-1">${column.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+            `;
+
+            columnList.appendChild(item);
+        });
+
+        // Re-add drag listeners to new elements
+        addDragEventListeners();
+        updateColumnOrder(); // Update hidden input
+    }
+});
 </script>
 {% endblock %}

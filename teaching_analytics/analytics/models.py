@@ -96,6 +96,7 @@ class AdminSettings(models.Model):
     allowed_file_types = models.CharField(max_length=100, default='.xlsb,.zip', help_text="Comma-separated list of allowed file extensions.")
     max_file_size_mb = models.PositiveSmallIntegerField(default=15, help_text="Maximum file size in MB.")
     semester_workload_target = models.PositiveSmallIntegerField(default=180, help_text="Target workload in hours for the entire semester.")
+    default_columns = models.JSONField(default=lambda: ['lecturer', 'date', 'subject', 'duration'])
 
     def __str__(self):
         return f"Admin Settings for {self.user.username}"

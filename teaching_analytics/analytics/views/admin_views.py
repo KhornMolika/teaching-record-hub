@@ -374,9 +374,7 @@ def admin_teaching_records(request):
     if 'page' in filter_params:
         del filter_params['page']
 
-    ordered_columns = view_settings.default_columns.split(',') if view_settings.default_columns else []
-    if 'lecturer' not in ordered_columns:
-        ordered_columns.insert(0, 'lecturer')
+    ordered_columns = system_settings.default_columns if system_settings.default_columns else []
 
     context = {
         'sessions': sessions,
@@ -541,26 +539,50 @@ def admin_settings(request):
     """Admin view for managing system-wide settings."""
     settings, created = AdminSettings.objects.get_or_create(user=request.user)
 
+    # Define available columns for teaching records
+    # This list should be comprehensive for an admin's view
+    available_record_columns = [
+        'lecturer',
+        'subject',
+        'date',
+        'duration',
+        'lecture_type',
+        'time_in',
+        'time_out',
+        'source_file',
+        # Add any other relevant columns an admin might want to see
+    ]
+
     if request.method == 'POST':
         settings.default_theme = request.POST.get('default_theme', 'light')
         settings.default_date_format = request.POST.get('default_date_format', 'YYYY-MM-DD')
         settings.default_records_per_page = int(request.POST.get('default_records_per_page', 15))
-        
+
         settings.default_workload_target = int(request.POST.get('default_workload_target', 20))
         settings.risk_threshold_overload = int(request.POST.get('risk_threshold_overload', 125))
         settings.risk_threshold_underload = int(request.POST.get('risk_threshold_underload', 75))
-        
+
         settings.allowed_file_types = request.POST.get('allowed_file_types', '.xlsb,.zip')
         settings.max_file_size_mb = int(request.POST.get('max_file_size_mb', 15))
         settings.semester_workload_target = int(request.POST.get('semester_workload_target', 180))
 
+        # Handle default_columns WITH ORDER
+        default_columns_str = request.POST.get('default_columns', '')
+        if default_columns_str:
+            settings.default_columns = [col.strip() for col in default_columns_str.split(',') if col.strip()]
+        else:
+            settings.default_columns = []
+
         settings.save()
+        print(f"DEBUG: settings.default_columns after save: {settings.default_columns}") # <--- ADD THIS LINE
         messages.success(request, "Admin settings have been successfully updated.")
         return redirect('admin_settings')
 
     context = {
         'settings': settings,
+        'available_record_columns': available_record_columns,
     }
+    print(f"DEBUG: settings.default_columns before render: {settings.default_columns}") # <--- ADD THIS LINE
     return render(request, 'analytics/admin/settings.html', context)
 
 from django.contrib.auth.hashers import make_password

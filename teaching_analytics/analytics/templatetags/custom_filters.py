@@ -9,3 +9,10 @@ def multiply(value, arg):
         return float(value) * float(arg)
     except (ValueError, TypeError):
         return ''
+
+@register.filter(name='split')
+def split(value, key):
+    """
+    Splits a string by a given key (delimiter) and returns a list.
+    """
+    return value.split(key)
