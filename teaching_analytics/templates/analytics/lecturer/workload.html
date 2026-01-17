@@ -18,113 +18,124 @@
       </p>
     </div>
 
-    <!-- Overload Warning -->
-    {% if is_overload %}
-    <div class="bg-red-50 dark:bg-red-900/30
-                border border-red-200 dark:border-red-700
-                rounded-xl p-4 mb-8 flex items-start gap-3" data-aos="fade-in" data-aos-delay="200">
-      <div class="flex-shrink-0">
-        <svg class="w-6 h-6 text-red-600 dark:text-red-400"
-             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667
-            1.732-3L13.732 4c-.77-1.333-2.694-1.333
-            -3.464 0L3.34 16c-.77 1.333.192 3
-            1.732 3z" />
-        </svg>
-      </div>
-      <div class="flex-1">
-        <div class="flex items-center gap-2 mb-1">
-          <h3 class="text-red-800 dark:text-red-300 font-semibold">
-            Overload Warning
-          </h3>
-          <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-            {{ predicted_total_hours|floatformat:0 }}h predicted (Target: {{ target_hours }}h)
-          </span>
+    {% if has_teaching_data %}
+        <!-- Overload Warning -->
+        {% if is_overload %}
+        <div class="bg-red-50 dark:bg-red-900/30
+                    border border-red-200 dark:border-red-700
+                    rounded-xl p-4 mb-8 flex items-start gap-3" data-aos="fade-in" data-aos-delay="200">
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6 text-red-600 dark:text-red-400"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667
+                1.732-3L13.732 4c-.77-1.333-2.694-1.333
+                -3.464 0L3.34 16c-.77 1.333.192 3
+                1.732 3z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-red-800 dark:text-red-300 font-semibold">
+                Overload Warning
+              </h3>
+              <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                {{ predicted_total_hours|floatformat:0 }}h predicted (Target: {{ target_hours }}h)
+              </span>
+            </div>
+            <p class="text-red-700 dark:text-red-300 text-sm">
+              You are projected to exceed your target by {{ variance_percentage }}%.
+              Consider discussing workload redistribution.
+              You have {{ remaining_hours|floatformat:0 }} hours remaining to reach your target.
+            </p>
+          </div>
         </div>
-        <p class="text-red-700 dark:text-red-300 text-sm">
-          You are projected to exceed your target by {{ variance_percentage }}%.
-          Consider discussing workload redistribution.
-          You have {{ remaining_hours|floatformat:0 }} hours remaining to reach your target.
-        </p>
-      </div>
-    </div>
+        {% endif %}
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-2 gap-6 mb-8">
+          <!-- Dynamic Breakdown Chart -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
+                      border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="300">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+              {% if workload_display_type == 'weekly' %}Weekly Hours Breakdown
+              {% elif workload_display_type == 'monthly' %}Monthly Hours Breakdown
+              {% elif workload_display_type == 'semester' %}Semester Hours Breakdown
+              {% else %}Workload Breakdown{% endif %}
+            </h2>
+            <div class="h-80">
+              <canvas id="workloadBreakdownChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Peak Hours -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
+                      border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="400">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+              Peak Teaching Hours
+            </h2>
+            <div class="h-80">
+              <canvas id="peakHoursChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subject Deep Dive Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
+                    border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="500">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+            Subject Deep Dive
+          </h2>
+          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-300">
+            <thead class="text-xs text-gray-700 dark:text-gray-200 uppercase
+                           bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th scope="col" class="px-6 py-3">Subject</th>
+                <th scope="col" class="px-6 py-3">Total Hours</th>
+                <th scope="col" class="px-6 py-3">Sessions</th>
+                <th scope="col" class="px-6 py-3">Avg. Session Length (mins)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for subject in subject_deep_dive %}
+              <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+                <th scope="row"
+                    class="px-6 py-4 font-medium
+                           text-gray-900 dark:text-white
+                           whitespace-nowrap">
+                  {{ subject.subject__subject_name }}
+                </th>
+                <td class="px-6 py-4">{{ subject.total_hours|floatformat:1 }}</td>
+                <td class="px-6 py-4">{{ subject.session_count }}</td>
+                <td class="px-6 py-4">{{ subject.avg_session_length|floatformat:0 }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4"
+                    class="text-center py-12
+                           text-gray-500 dark:text-gray-400">
+                  No subject data available.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+    {% else %}
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 text-center text-gray-700 dark:text-gray-300">
+            <h2 class="text-2xl font-bold mb-4">No Workload Data Available Yet</h2>
+            <p class="text-lg">It looks like you haven't uploaded any teaching records. Please upload your XLSB files to see your workload analysis.</p>
+            <p class="mt-4">
+                Go to your <a href="{% url 'teaching_records' %}" class="text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300 font-medium">Teaching Records</a> page to upload your first file.
+            </p>
+        </div>
     {% endif %}
-
-    <!-- Charts Row -->
-    <div class="grid grid-cols-2 gap-6 mb-8">
-      <!-- Dynamic Breakdown Chart -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                  border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="300">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          {% if workload_display_type == 'weekly' %}Weekly Hours Breakdown
-          {% elif workload_display_type == 'monthly' %}Monthly Hours Breakdown
-          {% elif workload_display_type == 'semester' %}Semester Hours Breakdown
-          {% else %}Workload Breakdown{% endif %}
-        </h2>
-        <div class="h-80">
-          <canvas id="workloadBreakdownChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Peak Hours -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                  border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="400">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          Peak Teaching Hours
-        </h2>
-        <div class="h-80">
-          <canvas id="peakHoursChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Subject Deep Dive Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm
-                border border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="500">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
-        Subject Deep Dive
-      </h2>
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-300">
-        <thead class="text-xs text-gray-700 dark:text-gray-200 uppercase
-                       bg-gray-50 dark:bg-gray-700">
-          <tr>
-            <th scope="col" class="px-6 py-3">Subject</th>
-            <th scope="col" class="px-6 py-3">Total Hours</th>
-            <th scope="col" class="px-6 py-3">Sessions</th>
-            <th scope="col" class="px-6 py-3">Avg. Session Length (mins)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for subject in subject_deep_dive %}
-          <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-            <th scope="row"
-                class="px-6 py-4 font-medium
-                       text-gray-900 dark:text-white
-                       whitespace-nowrap">
-              {{ subject.subject__subject_name }}
-            </th>
-            <td class="px-6 py-4">{{ subject.total_hours|floatformat:1 }}</td>
-            <td class="px-6 py-4">{{ subject.session_count }}</td>
-            <td class="px-6 py-4">{{ subject.avg_session_length|floatformat:0 }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="4"
-                class="text-center py-12
-                       text-gray-500 dark:text-gray-400">
-              No subject data available.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+{% if has_teaching_data %}
 <script>
   // Dynamic Workload Breakdown Chart
   const workloadBreakdownCtx = document.getElementById('workloadBreakdownChart');
@@ -205,4 +216,5 @@ if (peakHoursCtx) {
 }
 
 </script>
+{% endif %}
 {% endblock %}

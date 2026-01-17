@@ -60,21 +60,32 @@
       </div>
     </div>
 
-    {% include "components/_stats_cards.html" %} 
-    {% include "components/_semester_progress.html" %}
+    {% if has_teaching_data %}
+        {% include "components/_stats_cards.html" %} 
+        {% include "components/_semester_progress.html" %}
 
-    <!-- Charts Row -->
-    <div class="grid grid-cols-3 gap-6 mb-8">
-      {% include "components/_monthly_hours_chart.html" %} 
-      {% include "components/_subjects_chart.html" %}
-    </div>
+        <!-- Charts Row -->
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            {% include "components/_monthly_hours_chart.html" %} 
+            {% include "components/_subjects_chart.html" %}
+        </div>
 
-    {% include "components/_upcoming_sessions.html" %}
+        {% include "components/_upcoming_sessions.html" %}
+    {% else %}
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 text-center text-gray-700 dark:text-gray-300">
+            <h2 class="text-2xl font-bold mb-4">No Teaching Data Available Yet</h2>
+            <p class="text-lg">It looks like you haven't uploaded any teaching records. Please upload your XLSB files to see your workload overview, charts, and statistics.</p>
+            <p class="mt-4">
+                Go to your <a href="{% url 'teaching_records' %}" class="text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300 font-medium">Teaching Records</a> page to upload your first file.
+            </p>
+        </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+{% if has_teaching_data %}
 <script>
   // Check if we're in dark mode
   const isDarkMode = document.documentElement.classList.contains('dark');
@@ -205,4 +216,5 @@
     });
   }
 </script>
+{% endif %}
 {% endblock %}

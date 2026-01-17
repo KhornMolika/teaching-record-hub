@@ -39,101 +39,119 @@ def home(request):
 
     # Get all sessions for the lecturer
     all_sessions = TeachingSession.objects.filter(lecturer=lecturer).order_by("date")
+    has_teaching_data = all_sessions.exists()
 
     # --- Key Statistics ---
     total_minutes_completed = 0
-    for session in all_sessions:
-        if session.time_in and session.time_out:
-            duration = datetime.combine(session.date, session.time_out) - datetime.combine(session.date, session.time_in)
-            total_minutes_completed += duration.total_seconds() / 60
-        else:
-            total_minutes_completed += session.minutes
+    if has_teaching_data:
+        for session in all_sessions:
+            if session.time_in and session.time_out:
+                duration = datetime.combine(session.date, session.time_out) - datetime.combine(session.date, session.time_in)
+                total_minutes_completed += duration.total_seconds() / 60
+            else:
+                total_minutes_completed += session.minutes
 
-    total_hours_completed = round(total_minutes_completed / 60, 1)
-    total_sessions_completed = all_sessions.count()
+        total_hours_completed = round(total_minutes_completed / 60, 1)
+        total_sessions_completed = all_sessions.count()
 
-    # --- Semester & Weekly Calculations ---
-    SEMESTER_WEEKS = 14  # Standard semester length
-    weeks_with_sessions = all_sessions.values("week_number").distinct().count()
-    
-    # Avoid division by zero
-    average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
-    
-    # Simple prediction: average weekly hours * total semester weeks
-    predicted_total_hours = round(average_weekly_hours * SEMESTER_WEEKS, 1)
-    
-    # --- Progress Calculation ---
-    admin_settings = AdminSettings.objects.first()
-    TARGET_HOURS = admin_settings.semester_workload_target if admin_settings else 180
-    semester_progress = min(round((total_hours_completed / TARGET_HOURS) * 100, 2), 100) if TARGET_HOURS > 0 else 0
-
-    # --- Chart Data: Monthly Hours (New) ---
-    monthly_hours_chart_data = list(
-        all_sessions.values("date__month") # Use values to get dictionary with month, total_minutes
-        .annotate(total_minutes=Sum("minutes"))
-        .order_by("date__month")
-    )
-
-    # Convert month numbers to month names and calculate total hours
-    for item in monthly_hours_chart_data:
-        item["month_name"] = calendar.month_abbr[item["date__month"]]
-        item["total_hours"] = round(item["total_minutes"] / 60, 1)
-    
-    # --- Chart Data: Weekly Hours ---
-    weekly_hours_chart_data = (
-        all_sessions.values("week_number")
-        .annotate(total_minutes=Sum("minutes"))
-        .order_by("week_number")
-    )
-    
-    max_weekly_hours = 0
-    for week in weekly_hours_chart_data:
-        week["total_hours"] = round(week["total_minutes"] / 60, 1)
-        if week["total_hours"] > max_weekly_hours:
-            max_weekly_hours = week["total_hours"]
-
-    # --- Subject Breakdown ---
-    subjects_by_hours = (
-        all_sessions.values("subject__subject_name")
-        .annotate(total_minutes=Sum("minutes"))
-        .order_by("-total_minutes")
-    )
-    
-    for subject in subjects_by_hours:
-        subject["total_hours"] = int(subject["total_minutes"] / 60)
-
-    # --- Upcoming Sessions ---
-    now = timezone.now() # Use timezone.now() for consistency
-    today = now.date()
-    tomorrow = today + timedelta(days=1)
-    
-    upcoming_sessions_query = all_sessions.filter(date__gte=today).order_by("date", "time_in")
-    
-    # Process each upcoming session
-    processed_upcoming_sessions = []
-    seen_dates = set()
-    for session in upcoming_sessions_query:
-        if len(processed_upcoming_sessions) >= 7: # Limit to 7 sessions (or whatever number is desired)
-            break
+        # --- Semester & Weekly Calculations ---
+        SEMESTER_WEEKS = 14  # Standard semester length
+        weeks_with_sessions = all_sessions.values("week_number").distinct().count()
         
-        session.formatted_date = format_date(session.date, settings.date_format)
-        session.day_of_week = session.date.strftime('%a') # Mon, Tue, etc.
+        # Avoid division by zero
+        average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
+        
+        # Simple prediction: average weekly hours * total semester weeks
+        predicted_total_hours = round(average_weekly_hours * SEMESTER_WEEKS, 1)
+        
+        # --- Progress Calculation ---
+        admin_settings = AdminSettings.objects.first()
+        TARGET_HOURS = admin_settings.semester_workload_target if admin_settings else 180
+        semester_progress = min(round((total_hours_completed / TARGET_HOURS) * 100, 2), 100) if TARGET_HOURS > 0 else 0
 
-        if session.date == today:
-            session.relative_date = "Today"
-        elif session.date == tomorrow:
-            session.relative_date = "Tomorrow"
-        else:
-            session.relative_date = session.date.strftime('%A') # Full weekday name
+        # --- Chart Data: Monthly Hours (New) ---
+        monthly_hours_chart_data = list(
+            all_sessions.values("date__month") # Use values to get dictionary with month, total_minutes
+            .annotate(total_minutes=Sum("minutes"))
+            .order_by("date__month")
+        )
 
-        # Add a flag to indicate first session of a new day for grouping
-        if session.date not in seen_dates:
-            session.is_new_day = True
-            seen_dates.add(session.date)
-        else:
-            session.is_new_day = False
+        # Convert month numbers to month names and calculate total hours
+        for item in monthly_hours_chart_data:
+            item["month_name"] = calendar.month_abbr[item["date__month"]]
+            item["total_hours"] = round(item["total_minutes"] / 60, 1)
+        
+        # --- Chart Data: Weekly Hours ---
+        weekly_hours_chart_data = (
+            all_sessions.values("week_number")
+            .annotate(total_minutes=Sum("minutes"))
+            .order_by("week_number")
+        )
+        
+        max_weekly_hours = 0
+        for week in weekly_hours_chart_data:
+            week["total_hours"] = round(week["total_minutes"] / 60, 1)
+            if week["total_hours"] > max_weekly_hours:
+                max_weekly_hours = week["total_hours"]
 
-        processed_upcoming_sessions.append(session)
+        # --- Subject Breakdown ---
+        subjects_by_hours = (
+            all_sessions.values("subject__subject_name")
+            .annotate(total_minutes=Sum("minutes"))
+            .order_by("-total_minutes")
+        )
+        
+        for subject in subjects_by_hours:
+            subject["total_hours"] = int(subject["total_minutes"] / 60)
+
+        # --- Upcoming Sessions ---
+        now = timezone.now() # Use timezone.now() for consistency
+        today = now.date()
+        tomorrow = today + timedelta(days=1)
+        
+        upcoming_sessions_query = all_sessions.filter(date__gte=today).order_by("date", "time_in")
+        
+        # Process each upcoming session
+        processed_upcoming_sessions = []
+        seen_dates = set()
+        for session in upcoming_sessions_query:
+            if len(processed_upcoming_sessions) >= 7: # Limit to 7 sessions (or whatever number is desired)
+                break
+            
+            session.formatted_date = format_date(session.date, settings.date_format)
+            session.day_of_week = session.date.strftime('%a') # Mon, Tue, etc.
+
+            if session.date == today:
+                session.relative_date = "Today"
+            elif session.date == tomorrow:
+                session.relative_date = "Tomorrow"
+            else:
+                session.relative_date = session.date.strftime('%A') # Full weekday name
+
+            # Add a flag to indicate first session of a new day for grouping
+            if session.date not in seen_dates:
+                session.is_new_day = True
+                seen_dates.add(session.date)
+            else:
+                session.is_new_day = False
+
+            processed_upcoming_sessions.append(session)
+    else: # No teaching data
+        total_hours_completed = 0
+        total_sessions_completed = 0
+        predicted_total_hours = 0
+        average_weekly_hours = 0
+        semester_progress = 0
+        admin_settings = AdminSettings.objects.first()
+        TARGET_HOURS = admin_settings.semester_workload_target if admin_settings else 180
+        monthly_hours_chart_data = []
+        weekly_hours_chart_data = []
+        max_weekly_hours = 0
+        subjects_by_hours = []
+        processed_upcoming_sessions = []
+        now = timezone.now()
+        today = now.date()
+
 
     context = {
         "total_hours_completed": total_hours_completed,
@@ -151,6 +169,7 @@ def home(request):
         "now": now, # Add now to context for more precise time comparisons
         "settings": settings,
         "monthly_hours_chart_data": monthly_hours_chart_data,
+        "has_teaching_data": has_teaching_data,
     }
 
     return render(request, "analytics/lecturer/home.html", context)
@@ -171,76 +190,88 @@ def workload(request):
         return redirect("login")
 
     all_sessions = TeachingSession.objects.filter(lecturer=lecturer)
+    has_teaching_data = all_sessions.exists()
 
-    # --- Overload Warning Data ---
-    total_minutes_completed = sum(session.minutes for session in all_sessions)
-    total_hours_completed = round(total_minutes_completed / 60, 1)
-    weeks_with_sessions = all_sessions.values("week_number").distinct().count()
-    average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
-    
-    # Get admin settings for workload target
-    try:
-        admin_settings = AdminSettings.objects.get(user=request.user.admin_settings.user)
-        TARGET_HOURS = admin_settings.default_workload_target
-    except (AdminSettings.DoesNotExist, AttributeError):
-        # Fallback if settings don't exist or user is not an admin
+    if has_teaching_data:
+        # --- Overload Warning Data ---
+        total_minutes_completed = sum(session.minutes for session in all_sessions)
+        total_hours_completed = round(total_minutes_completed / 60, 1)
+        weeks_with_sessions = all_sessions.values("week_number").distinct().count()
+        average_weekly_hours = round(total_hours_completed / weeks_with_sessions, 1) if weeks_with_sessions > 0 else 0
+        
+        # Get admin settings for workload target
+        try:
+            admin_settings = AdminSettings.objects.get(user=request.user.admin_settings.user)
+            TARGET_HOURS = admin_settings.default_workload_target
+        except (AdminSettings.DoesNotExist, AttributeError):
+            # Fallback if settings don't exist or user is not an admin
+            admin_settings = AdminSettings.objects.first()
+            TARGET_HOURS = admin_settings.default_workload_target if admin_settings else 20
+
+
+        SEMESTER_WEEKS = 14
+        weeks_remaining = max(0, SEMESTER_WEEKS - weeks_with_sessions)
+        predicted_total_hours = round(total_hours_completed + (average_weekly_hours * weeks_remaining), 1)
+        variance_from_target = predicted_total_hours - TARGET_HOURS
+        variance_percentage = round((variance_from_target / TARGET_HOURS) * 100, 1) if TARGET_HOURS > 0 else 0
+        is_overload = variance_from_target > 0
+
+        # --- New In-depth Analytics based on settings.workload_display ---
+        workload_breakdown_data = []
+        if settings.workload_display == 'weekly':
+            workload_breakdown_data = list(
+                all_sessions.values("week_number")
+                .annotate(total_hours=Sum("minutes") / 60.0)
+                .order_by("week_number")
+            )
+            for item in workload_breakdown_data:
+                item['label'] = f'Week {item["week_number"]}'
+        elif settings.workload_display == 'monthly':
+            workload_breakdown_data = list(
+                all_sessions.values("month")
+                .annotate(total_hours=Sum("minutes") / 60.0)
+                .order_by("month")
+            )
+            for item in workload_breakdown_data:
+                item['label'] = datetime(2000, item['month'], 1).strftime('%B')
+        elif settings.workload_display == 'semester':
+            workload_breakdown_data = list(
+                all_sessions.values("teaching_file__semester")
+                .annotate(total_hours=Sum("minutes") / 60.0)
+                .order_by("teaching_file__semester")
+            )
+            for item in workload_breakdown_data:
+                item['label'] = item["teaching_file__semester"] if item["teaching_file__semester"] else "Undefined Semester"
+
+
+        # 2. Subject Deep Dive
+        subject_deep_dive = list(
+            all_sessions.values("subject__subject_code", "subject__subject_name")
+            .annotate(
+                total_hours=Sum("minutes") / 60.0,
+                session_count=Count("id"),
+                avg_session_length=Sum("minutes") / Count("id")
+            ).order_by("-total_hours")
+        )
+
+        # 3. Peak Hours Analysis
+        peak_hours_data = list(
+            all_sessions.exclude(time_in__isnull=True)
+            .extra(select={'hour': "CAST(strftime('%%H', time_in) AS INTEGER)"})
+            .values('hour')
+            .annotate(count=Count('id'))
+            .order_by('hour')
+        )
+    else: # No teaching data
+        is_overload = False
+        variance_percentage = 0
+        predicted_total_hours = 0
         admin_settings = AdminSettings.objects.first()
         TARGET_HOURS = admin_settings.default_workload_target if admin_settings else 20
+        workload_breakdown_data = []
+        subject_deep_dive = []
+        peak_hours_data = []
 
-
-    SEMESTER_WEEKS = 14
-    weeks_remaining = max(0, SEMESTER_WEEKS - weeks_with_sessions)
-    predicted_total_hours = round(total_hours_completed + (average_weekly_hours * weeks_remaining), 1)
-    variance_from_target = predicted_total_hours - TARGET_HOURS
-    variance_percentage = round((variance_from_target / TARGET_HOURS) * 100, 1) if TARGET_HOURS > 0 else 0
-    is_overload = variance_from_target > 0
-
-    # --- New In-depth Analytics based on settings.workload_display ---
-    workload_breakdown_data = []
-    if settings.workload_display == 'weekly':
-        workload_breakdown_data = list(
-            all_sessions.values("week_number")
-            .annotate(total_hours=Sum("minutes") / 60.0)
-            .order_by("week_number")
-        )
-        for item in workload_breakdown_data:
-            item['label'] = f'Week {item["week_number"]}'
-    elif settings.workload_display == 'monthly':
-        workload_breakdown_data = list(
-            all_sessions.values("month")
-            .annotate(total_hours=Sum("minutes") / 60.0)
-            .order_by("month")
-        )
-        for item in workload_breakdown_data:
-            item['label'] = datetime(2000, item['month'], 1).strftime('%B')
-    elif settings.workload_display == 'semester':
-        workload_breakdown_data = list(
-            all_sessions.values("teaching_file__semester")
-            .annotate(total_hours=Sum("minutes") / 60.0)
-            .order_by("teaching_file__semester")
-        )
-        for item in workload_breakdown_data:
-            item['label'] = item["teaching_file__semester"] if item["teaching_file__semester"] else "Undefined Semester"
-
-
-    # 2. Subject Deep Dive
-    subject_deep_dive = list(
-        all_sessions.values("subject__subject_code", "subject__subject_name")
-        .annotate(
-            total_hours=Sum("minutes") / 60.0,
-            session_count=Count("id"),
-            avg_session_length=Sum("minutes") / Count("id")
-        ).order_by("-total_hours")
-    )
-
-    # 3. Peak Hours Analysis
-    peak_hours_data = list(
-        all_sessions.exclude(time_in__isnull=True)
-        .extra(select={'hour': "CAST(strftime('%%H', time_in) AS INTEGER)"})
-        .values('hour')
-        .annotate(count=Count('id'))
-        .order_by('hour')
-    )
 
     context = {
         # Overload warning
@@ -255,6 +286,7 @@ def workload(request):
         "workload_display_type": settings.workload_display, # Pass display type
         "subject_deep_dive": subject_deep_dive,
         "peak_hours_data": peak_hours_data,
+        "has_teaching_data": has_teaching_data,
     }
 
     return render(request, 'analytics/lecturer/workload.html', context)
