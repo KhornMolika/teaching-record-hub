@@ -67,7 +67,7 @@
   <nav class="flex-1 px-4 overflow-y-auto">
     <a
       href="{% url 'dashboard' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'dashboard' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'dashboard' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -86,7 +86,7 @@
     </a>
     <a
       href="{% url 'lecturers' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'lecturers' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'lecturers' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -106,7 +106,7 @@
     {% if request.user.is_superuser %}
     <a
       href="{% url 'manage_admins' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'manage_admins' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'manage_admins' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -126,7 +126,7 @@
     {% endif %}
     <a
       href="{% url 'admin_teaching_records' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_teaching_records' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_teaching_records' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -146,7 +146,7 @@
 
     <a
       href="{% url 'admin_workload_prediction' %}"
-      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_workload_prediction' %}bg-white text-teal-600{% else %}text-white/80 hover:bg-white/10{% endif %} rounded-lg mb-2 font-medium transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_workload_prediction' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 font-medium transition"
     >
       <svg
         class="w-5 h-5"
@@ -169,7 +169,7 @@
   <div class="px-4 pb-6">
     <a
       href="{% url 'admin_settings' %}"
-      class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg mb-2 transition"
+      class="flex items-center gap-3 px-4 py-3 {% if request.resolver_match.url_name == 'admin_settings' %}bg-white dark:bg-teal-600 text-teal-600 dark:text-white{% else %}text-white/80 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-700{% endif %} rounded-lg mb-2 transition"
     >
       <svg
         class="w-5 h-5"
