@@ -192,6 +192,23 @@ def workload(request):
     all_sessions = TeachingSession.objects.filter(lecturer=lecturer)
     has_teaching_data = all_sessions.exists()
 
+    # Initialize all variables to default values
+    total_minutes_completed = 0
+    total_hours_completed = 0
+    weeks_with_sessions = 0
+    average_weekly_hours = 0
+    predicted_total_hours = 0
+    variance_from_target = 0
+    variance_percentage = 0
+    is_overload = False
+    workload_breakdown_data = []
+    subject_deep_dive = []
+    peak_hours_data = []
+    
+    admin_settings = AdminSettings.objects.first()
+    TARGET_HOURS = admin_settings.default_workload_target if admin_settings else 20
+
+
     if has_teaching_data:
         # --- Overload Warning Data ---
         total_minutes_completed = sum(session.minutes for session in all_sessions)
@@ -217,7 +234,6 @@ def workload(request):
         is_overload = variance_from_target > 0
 
         # --- New In-depth Analytics based on settings.workload_display ---
-        workload_breakdown_data = []
         if settings.workload_display == 'weekly':
             workload_breakdown_data = list(
                 all_sessions.values("week_number")
