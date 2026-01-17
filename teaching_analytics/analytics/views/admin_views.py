@@ -12,6 +12,7 @@ from django.db.models import Sum, Count, Avg
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
+from django.db import transaction # <--- ADDED LINE
 from analytics.models import Lecturer, TeachingSession, WorkloadPrediction, Subject, TeachingFile, LecturerSettings, AdminSettings
 from analytics.services.decorators import admin_required, superadmin_required
 from analytics.services.parser import parse_xlsb_and_create_sessions
@@ -537,8 +538,6 @@ def admin_workload_prediction(request):
 @admin_required
 def admin_settings(request):
     """Admin view for managing system-wide settings."""
-    settings, created = AdminSettings.objects.get_or_create(user=request.user)
-
     # Define available columns for teaching records
     # This list should be comprehensive for an admin's view
     available_record_columns = [
@@ -554,35 +553,62 @@ def admin_settings(request):
     ]
 
     if request.method == 'POST':
-        settings.default_theme = request.POST.get('default_theme', 'light')
-        settings.default_date_format = request.POST.get('default_date_format', 'YYYY-MM-DD')
-        settings.default_records_per_page = int(request.POST.get('default_records_per_page', 15))
+        with transaction.atomic():
+            # Get the settings object within the transaction context
+            # It's better to fetch it directly inside, in case get_or_create has its own caching
+            # Use get_or_create for robustness if it somehow doesn't exist
+            settings, created = AdminSettings.objects.get_or_create(user=request.user)
 
-        settings.default_workload_target = int(request.POST.get('default_workload_target', 20))
-        settings.risk_threshold_overload = int(request.POST.get('risk_threshold_overload', 125))
-        settings.risk_threshold_underload = int(request.POST.get('risk_threshold_underload', 75))
+            settings.default_theme = request.POST.get('default_theme', 'light')
+            settings.default_date_format = request.POST.get('default_date_format', 'YYYY-MM-DD')
+            settings.default_records_per_page = int(request.POST.get('default_records_per_page', 15))
 
-        settings.allowed_file_types = request.POST.get('allowed_file_types', '.xlsb,.zip')
-        settings.max_file_size_mb = int(request.POST.get('max_file_size_mb', 15))
-        settings.semester_workload_target = int(request.POST.get('semester_workload_target', 180))
+            settings.default_workload_target = int(request.POST.get('default_workload_target', 20))
+            settings.risk_threshold_overload = int(request.POST.get('risk_threshold_overload', 125))
+            settings.risk_threshold_underload = int(request.POST.get('risk_threshold_underload', 75))
 
-        # Handle default_columns WITH ORDER
-        default_columns_str = request.POST.get('default_columns', '')
-        if default_columns_str:
-            settings.default_columns = [col.strip() for col in default_columns_str.split(',') if col.strip()]
-        else:
-            settings.default_columns = []
+            settings.allowed_file_types = request.POST.get('allowed_file_types', '.xlsb,.zip')
+            settings.max_file_size_mb = int(request.POST.get('max_file_size_mb', 15))
+            settings.semester_workload_target = int(request.POST.get('semester_workload_target', 180))
 
-        settings.save()
-        print(f"DEBUG: settings.default_columns after save: {settings.default_columns}") # <--- ADD THIS LINE
+            # Handle default_columns WITH ORDER
+            default_columns_str = request.POST.get('default_columns', '')
+            if default_columns_str:
+                settings.default_columns = [col.strip() for col in default_columns_str.split(',') if col.strip()]
+            else:
+                settings.default_columns = []
+
+            # Save with explicit update_fields
+            settings.save(update_fields=[
+                'default_theme', 'default_date_format', 'default_records_per_page',
+                'default_workload_target', 'risk_threshold_overload', 'risk_threshold_underload',
+                'allowed_file_types', 'max_file_size_mb', 'semester_workload_target',
+                'default_columns'
+            ])
+            
+            # Explicitly refresh from DB to clear ORM cache within this request if needed
+            settings.refresh_from_db()
+
         messages.success(request, "Admin settings have been successfully updated.")
-        return redirect('admin_settings')
+        return redirect('admin_settings') # Triggers a new GET request
 
+    else: # GET request
+        # Fetch the settings for rendering. Ensure it's the latest.
+        # Use get_or_create to handle cases where settings might not exist yet.
+        settings, created = AdminSettings.objects.get_or_create(user=request.user)
+        # Explicitly refresh from DB just before rendering to ensure no stale data
+        settings.refresh_from_db()
+
+        # Ensure default_columns is never empty for existing objects
+        if not settings.default_columns: # Checks for empty list or None
+            settings.default_columns = ['lecturer', 'subject', 'date', 'duration']
+            settings.save(update_fields=['default_columns']) # Save this default back to DB
+            settings.refresh_from_db() # Refresh again to confirm saved state
+            
     context = {
         'settings': settings,
         'available_record_columns': available_record_columns,
     }
-    print(f"DEBUG: settings.default_columns before render: {settings.default_columns}") # <--- ADD THIS LINE
     return render(request, 'analytics/admin/settings.html', context)
 
 from django.contrib.auth.hashers import make_password
