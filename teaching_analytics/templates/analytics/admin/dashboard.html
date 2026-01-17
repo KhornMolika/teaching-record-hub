@@ -336,7 +336,7 @@
 
               <div>
 
-                <p class="font-semibold text-gray-800 dark:text-gray-200">{{ item.file.file_name.name|truncatechars:30 }}</p>
+                <p class="font-semibold text-gray-800 dark:text-gray-200">{{ item.file_name_only|truncatechars:30 }}</p>
 
                 <p class="text-xs text-gray-500 dark:text-gray-400">by {{ item.file.lecturer.user.get_full_name }} &middot; {{ item.file.upload_date|timesince }} ago</p>
 

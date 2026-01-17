@@ -1,3 +1,4 @@
+import os
 import json
 from datetime import time, datetime, timedelta
 import zipfile
@@ -83,6 +84,7 @@ def dashboard(request):
         minutes = total_minutes % 60
         recent_files.append({
             'file': file,
+            'file_name_only': os.path.basename(file.file_name.name), # Add this line
             'duration': f'{hours}h {minutes}m'
         })
 
@@ -199,14 +201,19 @@ def activate_admin(request, user_id):
 def deactivate_lecturer(request, lecturer_id):
     """Deactivate a lecturer's account (set is_approved to False and user.is_active to False)."""
     lecturer = get_object_or_404(Lecturer, id=lecturer_id)
-    if lecturer.is_approved or lecturer.user.is_active:
-        lecturer.is_approved = False
-        lecturer.user.is_active = False # Deactivate the associated User account
-        lecturer.user.save()
-        lecturer.save()
-        messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been deactivated.")
-    else:
-        messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already deactivated.")
+
+    with transaction.atomic():
+        if lecturer.is_approved or lecturer.user.is_active:
+            lecturer.is_approved = False
+            lecturer.user.is_active = False # Deactivate the associated User account
+            lecturer.user.save()
+            lecturer.user.refresh_from_db() # Refresh User object
+            
+            lecturer.save()
+            lecturer.refresh_from_db() # Refresh Lecturer object
+            messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been deactivated.")
+        else:
+            messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already deactivated.")
     
     return redirect('lecturers')
 
