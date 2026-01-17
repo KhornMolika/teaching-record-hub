@@ -1,0 +1,20 @@
+<!-- Monthly Hours Chart -->
+<div
+  class="col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
+  data-aos="fade-up"
+  data-aos-delay="600"
+>
+  <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+    My Monthly Hours
+  </h2>
+
+  {% if monthly_hours_chart_data %} {# Changed data source #}
+  <div class="h-64">
+    <canvas id="monthlyHoursChart"></canvas> {# Changed ID #}
+  </div>
+  {% else %}
+  <div class="text-center text-gray-500 dark:text-gray-400 py-12">
+    No monthly data to display yet.
+  </div>
+  {% endif %}
+</div>

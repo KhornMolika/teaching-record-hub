@@ -9,6 +9,11 @@
     <div class="space-y-4">
 
       {% for session in upcoming_sessions %}
+        {% if session.is_new_day %}
+        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-6 mb-2 border-b border-gray-200 dark:border-gray-700 pb-1">
+            {{ session.relative_date }} ({{ session.formatted_date }})
+        </div>
+        {% endif %}
       <div class="flex items-center justify-between p-4
                   bg-gray-50 dark:bg-gray-700
                   rounded-lg
@@ -18,9 +23,9 @@
         <div class="flex items-center gap-4">
           
           <div class="w-12 h-12
-                      bg-indigo-100 dark:bg-indigo-900/40
+                      bg-teal-100 dark:bg-teal-900/40 {# Changed from indigo #}
                       rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400"
+            <svg class="w-6 h-6 text-teal-600 dark:text-teal-400 {# Changed from indigo #}"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -37,28 +42,19 @@
           </div>
         </div>
 
-        <div class.flex items-center gap-4">
+        <div class="flex items-center gap-4"> {# Corrected class name #}
           <div class="text-right">
             <div class="text-sm font-medium text-gray-900 dark:text-white">
               {{ session.time_in|time:"H:i" }} - {{ session.time_out|time:"H:i" }}
             </div>
           </div>
 
-          {% if session.date == today %}
-            <span class="px-3 py-1
-                         bg-indigo-600 dark:bg-indigo-500
-                         text-white
-                         text-xs font-medium rounded-full">
-              Today
-            </span>
-          {% else %}
-            <span class="px-3 py-1
-                         bg-gray-200 dark:bg-gray-600
-                         text-gray-700 dark:text-gray-200
-                         text-xs font-medium rounded-full">
-              {{ session.date|date:"M d" }}
-            </span>
-          {% endif %}
+          <span class="px-3 py-1
+                       bg-teal-600 dark:bg-teal-500 {# Always teal for date badge #}
+                       text-white
+                       text-xs font-medium rounded-full">
+            {{ session.day_of_week }}
+          </span>
         </div>
 
       </div>

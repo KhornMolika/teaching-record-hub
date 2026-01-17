@@ -14,6 +14,8 @@ from django.shortcuts import render, redirect
 from analytics.models import Lecturer, LecturerSettings
 from ..utils import format_date, get_python_date_format, get_user_settings
 import csv
+import calendar
+from django.utils import timezone # <--- ADDED LINE # <--- ADDED LINE
 
 def some_view(request):
     settings = get_user_settings(request)
@@ -65,6 +67,18 @@ def home(request):
     TARGET_HOURS = admin_settings.semester_workload_target if admin_settings else 180
     semester_progress = min(round((total_hours_completed / TARGET_HOURS) * 100, 2), 100) if TARGET_HOURS > 0 else 0
 
+    # --- Chart Data: Monthly Hours (New) ---
+    monthly_hours_chart_data = list(
+        all_sessions.values("date__month") # Use values to get dictionary with month, total_minutes
+        .annotate(total_minutes=Sum("minutes"))
+        .order_by("date__month")
+    )
+
+    # Convert month numbers to month names and calculate total hours
+    for item in monthly_hours_chart_data:
+        item["month_name"] = calendar.month_abbr[item["date__month"]]
+        item["total_hours"] = round(item["total_minutes"] / 60, 1)
+    
     # --- Chart Data: Weekly Hours ---
     weekly_hours_chart_data = (
         all_sessions.values("week_number")
@@ -89,12 +103,37 @@ def home(request):
         subject["total_hours"] = int(subject["total_minutes"] / 60)
 
     # --- Upcoming Sessions ---
-    today = datetime.now().date()
-    upcoming_sessions = all_sessions.filter(date__gte=today).order_by("date", "time_in")[:3]
+    now = timezone.now() # Use timezone.now() for consistency
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
     
-    # Format dates for upcoming sessions
-    for session in upcoming_sessions:
+    upcoming_sessions_query = all_sessions.filter(date__gte=today).order_by("date", "time_in")
+    
+    # Process each upcoming session
+    processed_upcoming_sessions = []
+    seen_dates = set()
+    for session in upcoming_sessions_query:
+        if len(processed_upcoming_sessions) >= 7: # Limit to 7 sessions (or whatever number is desired)
+            break
+        
         session.formatted_date = format_date(session.date, settings.date_format)
+        session.day_of_week = session.date.strftime('%a') # Mon, Tue, etc.
+
+        if session.date == today:
+            session.relative_date = "Today"
+        elif session.date == tomorrow:
+            session.relative_date = "Tomorrow"
+        else:
+            session.relative_date = session.date.strftime('%A') # Full weekday name
+
+        # Add a flag to indicate first session of a new day for grouping
+        if session.date not in seen_dates:
+            session.is_new_day = True
+            seen_dates.add(session.date)
+        else:
+            session.is_new_day = False
+
+        processed_upcoming_sessions.append(session)
 
     context = {
         "total_hours_completed": total_hours_completed,
@@ -107,9 +146,11 @@ def home(request):
         "weekly_hours_chart_data": weekly_hours_chart_data,
         "max_weekly_hours": max_weekly_hours,
         "subjects_by_hours": subjects_by_hours,
-        "upcoming_sessions": upcoming_sessions,
-        "today": today,
-        "settings": settings,  # Add settings to context
+        "upcoming_sessions": processed_upcoming_sessions, # Use the processed list
+        "today": today, # Keep today in context
+        "now": now, # Add now to context for more precise time comparisons
+        "settings": settings,
+        "monthly_hours_chart_data": monthly_hours_chart_data,
     }
 
     return render(request, "analytics/lecturer/home.html", context)

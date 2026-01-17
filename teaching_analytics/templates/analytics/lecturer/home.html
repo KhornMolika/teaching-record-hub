@@ -65,7 +65,7 @@
 
     <!-- Charts Row -->
     <div class="grid grid-cols-3 gap-6 mb-8">
-      {% include "components/_weekly_hours_chart.html" %} 
+      {% include "components/_monthly_hours_chart.html" %} 
       {% include "components/_subjects_chart.html" %}
     </div>
 
@@ -86,19 +86,19 @@
     teal: isDarkMode ? '#5eead4' : '#38b2ac',
   };
 
-  // Weekly Hours Chart
-  const weeklyHoursCtx = document.getElementById('weeklyHoursChart');
-  if (weeklyHoursCtx) {
-    const weekLabels = [{% for week in weekly_hours_chart_data %}'Week {{ week.week_number }}',{% endfor %}];
-    const weekHours = [{% for week in weekly_hours_chart_data %}{{ week.total_hours }},{% endfor %}];
+  // Monthly Hours Chart (replaces Weekly Hours Chart)
+  const monthlyHoursCtx = document.getElementById('monthlyHoursChart'); // Changed ID
+  if (monthlyHoursCtx) {
+    const monthLabels = [{% for month in monthly_hours_chart_data %}'{{ month.month_name }}',{% endfor %}]; // Use monthly_hours_chart_data
+    const monthHours = [{% for month in monthly_hours_chart_data %}{{ month.total_hours }},{% endfor %}]; // Use monthly_hours_chart_data
 
-    new Chart(weeklyHoursCtx, {
+    new Chart(monthlyHoursCtx, { // Changed context variable
       type: 'bar',
       data: {
-        labels: weekLabels,
+        labels: monthLabels, // Changed labels
         datasets: [{
-          label: 'Weekly Hours',
-          data: weekHours,
+          label: 'Monthly Hours', // Changed label
+          data: monthHours, // Changed data
           backgroundColor: chartColors.teal,
           borderColor: chartColors.teal,
           borderWidth: 1
