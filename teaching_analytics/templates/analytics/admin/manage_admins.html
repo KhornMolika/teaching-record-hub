@@ -61,7 +61,49 @@
                 {% endif %}
               </td>
               <td class="px-6 py-4">
+                {% if admin.is_active %}
+                <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Active</span>
+                {% else %}
+                <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4">
                 <a href="#" class="font-medium text-indigo-600 hover:underline">Edit</a>
+                {% if admin.is_active %}
+                    {% if admin != request.user %}
+                    <form
+                      action="{% url 'deactivate_admin' admin.id %}"
+                      method="post"
+                      class="inline ml-4"
+                    >
+                      {% csrf_token %}
+                      <button
+                        type="submit"
+                        class="font-medium text-red-600 hover:underline"
+                        onclick="return confirm('Are you sure you want to deactivate this admin user? They will no longer be able to log in.')"
+                      >
+                        Deactivate
+                      </button>
+                    </form>
+                    {% else %}
+                    <span class="font-medium text-gray-400 cursor-not-allowed ml-4">Cannot Deactivate Self</span>
+                    {% endif %}
+                {% else %}
+                  <form
+                    action="{% url 'activate_admin' admin.id %}"
+                    method="post"
+                    class="inline ml-4"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="font-medium text-green-600 hover:underline"
+                      onclick="return confirm('Are you sure you want to activate this admin user?')"
+                    >
+                      Activate
+                    </button>
+                  </form>
+                {% endif %}
               </td>
             </tr>
             {% empty %}

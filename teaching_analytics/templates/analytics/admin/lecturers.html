@@ -43,20 +43,20 @@
         <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
           <li class="mr-2">
             <a
-              href="#"
-              class="inline-block p-4 border-b-2 border-indigo-600 rounded-t-lg text-indigo-600"
+              href="{% url 'lecturers' %}?status=all"
+              class="inline-block p-4 border-b-2 rounded-t-lg {% if current_status == 'all' %}border-indigo-600 text-indigo-600{% else %}border-transparent hover:text-gray-600 hover:border-gray-300{% endif %}"
             >
               All Lecturers
               <span
                 class="bg-gray-200 text-gray-800 text-xs font-semibold ml-2 px-2.5 py-0.5 rounded-full"
-                >{{ lecturers|length }}</span
+                >{{ all_count }}</span
               >
             </a>
           </li>
           <li class="mr-2">
             <a
-              href="#"
-              class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
+              href="{% url 'lecturers' %}?status=pending"
+              class="inline-block p-4 border-b-2 rounded-t-lg {% if current_status == 'pending' %}border-indigo-600 text-indigo-600{% else %}border-transparent hover:text-gray-600 hover:border-gray-300{% endif %}"
             >
               Pending Approval
               <span
@@ -67,8 +67,8 @@
           </li>
           <li class="mr-2">
             <a
-              href="#"
-              class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
+              href="{% url 'lecturers' %}?status=approved"
+              class="inline-block p-4 border-b-2 rounded-t-lg {% if current_status == 'approved' %}border-indigo-600 text-indigo-600{% else %}border-transparent hover:text-gray-600 hover:border-gray-300{% endif %}"
             >
               Approved
               <span
@@ -131,20 +131,25 @@
                 <td class="px-6 py-4">{{ lecturer.department }}</td>
                 <td class="px-6 py-4">{{ lecturer.created_at|date:"Y-m-d" }}</td>
                 <td class="px-6 py-4">
-                  {% if lecturer.is_approved %}
+                  {% if lecturer.is_approved and lecturer.user.is_active %}
                   <span
                     class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full"
-                    >Approved</span
+                    >Approved & Active</span
+                  >
+                  {% elif not lecturer.is_approved and lecturer.user.is_active %}
+                  <span
+                    class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
+                    >Pending Approval</span
                   >
                   {% else %}
                   <span
-                    class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-                    >Pending</span
+                    class="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full"
+                    >Deactivated</span
                   >
                   {% endif %}
                 </td>
                 <td class="px-6 py-4">
-                  {% if not lecturer.is_approved %}
+                  {% if not lecturer.is_approved or not lecturer.user.is_active %}
                   <form
                     action="{% url 'approve_lecturer' lecturer.id %}"
                     method="post"
@@ -159,11 +164,22 @@
                     </button>
                   </form>
                   {% else %}
-                  <a href="#" class="font-medium text-gray-400 cursor-not-allowed"
-                    >Approved</a
+                  <a href="{% url 'edit_lecturer' lecturer.id %}" class="font-medium text-blue-600 hover:underline">Edit</a>
+                  <form
+                    action="{% url 'deactivate_lecturer' lecturer.id %}"
+                    method="post"
+                    class="inline ml-4"
                   >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="font-medium text-red-600 hover:underline"
+                      onclick="return confirm('Are you sure you want to deactivate this lecturer? This will also disable their login.')"
+                    >
+                      Deactivate
+                    </button>
+                  </form>
                   {% endif %}
-                  <a href="{% url 'edit_lecturer' lecturer.id %}" class="font-medium text-blue-600 hover:underline ml-4">Edit</a>
                 </td>
               </tr>
               {% empty %}

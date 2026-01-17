@@ -1,4 +1,8 @@
+import json
 from datetime import time, datetime, timedelta
+import zipfile
+from io import BytesIO
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -7,8 +11,10 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum, Count, Avg
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.urls import reverse
 from analytics.models import Lecturer, TeachingSession, WorkloadPrediction, Subject, TeachingFile, LecturerSettings
 from analytics.services.decorators import admin_required, superadmin_required
+from analytics.services.parser import parse_xlsb_and_create_sessions
 from analytics.utils import format_date
 
 
@@ -20,19 +26,23 @@ def dashboard(request):
     # Stats Cards
     active_lecturers_count = approved_lecturers.count()
     pending_approvals_count = Lecturer.objects.filter(is_approved=False, user__is_staff=False).count()
-    
+    total_lecturers_count = Lecturer.objects.filter(user__is_staff=False).count()
+
     total_minutes_agg = TeachingSession.objects.aggregate(total_minutes=Sum('minutes'))
     total_teaching_hours = (total_minutes_agg['total_minutes'] or 0) / 60
     
     total_sessions_count = TeachingSession.objects.count()
     
-    workload_alerts = WorkloadPrediction.objects.exclude(risk_level='Normal')
+    all_predictions = WorkloadPrediction.objects.all() # Get all predictions
+    total_predictions_count = all_predictions.count()
+    workload_alerts = all_predictions.exclude(risk_level='Normal')
     workload_alerts_count = workload_alerts.count()
     overload_count = workload_alerts.filter(risk_level='Overload').count()
     underload_count = workload_alerts.filter(risk_level='Underload').count()
+    normal_count = total_predictions_count - workload_alerts_count # Calculate normal predictions
 
     # Hours by Department
-    department_hours = Lecturer.objects.filter(is_approved=True, user__is_staff=False) \
+    department_hours = approved_lecturers \
         .values('department') \
         .annotate(total_minutes=Sum('sessions__minutes')) \
         .order_by('-total_minutes')
@@ -45,14 +55,40 @@ def dashboard(request):
         } for item in department_hours if item['total_minutes']
     ]
     
-    # Workload Status & Recent Sessions
-    workload_status = WorkloadPrediction.objects.select_related('lecturer__user', 'subject').order_by('-created_at')[:5]
-    recent_sessions = TeachingSession.objects.select_related('lecturer__user', 'subject').order_by('-date', '-time_in')[:5]
+    # Top 5 Lecturers by Teaching Hours
+    top_lecturers_qs = Lecturer.objects.filter(is_approved=True, user__is_staff=False) \
+        .annotate(total_minutes=Sum('sessions__minutes')) \
+        .order_by('-total_minutes')[:5]
+
+    top_lecturers = []
+    for lecturer in top_lecturers_qs:
+        total_minutes = lecturer.total_minutes or 0
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        top_lecturers.append({
+            'lecturer': lecturer,
+            'duration': f'{hours}h {minutes}m'
+        })
+
+    # Recent File Uploads
+    recent_files_qs = TeachingFile.objects.select_related('lecturer__user').order_by('-upload_date')[:5].annotate(
+        total_minutes=Sum('sessions__minutes')
+    )
+    
+    recent_files = []
+    for file in recent_files_qs:
+        total_minutes = file.total_minutes or 0
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        recent_files.append({
+            'file': file,
+            'duration': f'{hours}h {minutes}m'
+        })
 
     context = {
         'active_lecturers_count': active_lecturers_count,
         'pending_approvals_count': pending_approvals_count,
-        'total_lecturers': active_lecturers_count + pending_approvals_count,
+        'total_lecturers_count': total_lecturers_count,
         
         'total_teaching_hours': total_teaching_hours,
         'total_sessions_count': total_sessions_count,
@@ -60,10 +96,12 @@ def dashboard(request):
         'workload_alerts_count': workload_alerts_count,
         'overload_count': overload_count,
         'underload_count': underload_count,
+        'total_predictions_count': total_predictions_count,
+        'normal_count': normal_count,
         
         'department_hours': department_hours_list,
-        'workload_status': workload_status,
-        'recent_sessions': recent_sessions,
+        'top_lecturers': top_lecturers,
+        'recent_files': recent_files,
     }
     
     return render(request, 'analytics/admin/dashboard.html', context)
@@ -72,12 +110,32 @@ def dashboard(request):
 @admin_required
 def lecturers(request):
     """Admin lecturers management page"""
-    lecturers_list = Lecturer.objects.select_related('user').order_by('is_approved', 'created_at')
+    status = request.GET.get('status', 'all')
     
+    # Base query for all non-staff lecturers
+    base_query = Lecturer.objects.select_related('user').filter(user__is_staff=False)
+    
+    # Get counts for tabs
+    pending_count = base_query.filter(is_approved=False).count()
+    approved_count = base_query.filter(is_approved=True).count()
+    all_count = base_query.count()
+
+    # Filter the list for display based on status
+    if status == 'pending':
+        display_lecturers = base_query.filter(is_approved=False)
+    elif status == 'approved':
+        display_lecturers = base_query.filter(is_approved=True)
+    else: # 'all'
+        display_lecturers = base_query
+        
+    display_lecturers = display_lecturers.order_by('is_approved', 'created_at')
+
     context = {
-        'lecturers': lecturers_list,
-        'pending_count': Lecturer.objects.filter(is_approved=False, user__is_staff=False).count(),
-        'approved_count': Lecturer.objects.filter(is_approved=True, user__is_staff=False).count(),
+        'lecturers': display_lecturers,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'all_count': all_count,
+        'current_status': status,
     }
     
     return render(request, 'analytics/admin/lecturers.html', context)
@@ -85,22 +143,73 @@ def lecturers(request):
 @admin_required
 @require_POST
 def approve_lecturer(request, lecturer_id):
-    """Approve a lecturer's account."""
+    """Approve a lecturer's account and activate their user account."""
     lecturer = get_object_or_404(Lecturer, id=lecturer_id)
-    if not lecturer.is_approved:
+    if not lecturer.is_approved or not lecturer.user.is_active:
         lecturer.is_approved = True
         lecturer.approved_by = request.user
         lecturer.approved_at = timezone.now()
+        lecturer.user.is_active = True # Activate the associated User account
+        lecturer.user.save()
         lecturer.save()
-        messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been approved.")
+        messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been approved and activated.")
     else:
-        messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already approved.")
+        messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already approved and active.")
     
     return redirect('lecturers')
+
+@superadmin_required
+@require_POST
+def activate_admin(request, user_id):
+    """Activate an admin user's account (set user.is_active to True)."""
+    user = get_object_or_404(User, id=user_id, is_staff=True)
+    if not user.is_active:
+        user.is_active = True
+        user.save()
+        messages.success(request, f"Admin user {user.get_full_name() or user.username} has been activated.")
+    else:
+        messages.warning(request, f"Admin user {user.get_full_name() or user.username} is already active.")
+    
+    return redirect('manage_admins')
+
+@admin_required
+@require_POST
+def deactivate_lecturer(request, lecturer_id):
+    """Deactivate a lecturer's account (set is_approved to False and user.is_active to False)."""
+    lecturer = get_object_or_404(Lecturer, id=lecturer_id)
+    if lecturer.is_approved or lecturer.user.is_active:
+        lecturer.is_approved = False
+        lecturer.user.is_active = False # Deactivate the associated User account
+        lecturer.user.save()
+        lecturer.save()
+        messages.success(request, f"Lecturer {lecturer.user.get_full_name()} has been deactivated.")
+    else:
+        messages.warning(request, f"Lecturer {lecturer.user.get_full_name()} is already deactivated.")
+    
+    return redirect('lecturers')
+
+@superadmin_required
+@require_POST
+def deactivate_admin(request, user_id):
+    """Deactivate an admin user's account (set user.is_active to False)."""
+    user = get_object_or_404(User, id=user_id, is_staff=True)
+    if user.is_active:
+        if user == request.user:
+            messages.error(request, "You cannot deactivate your own admin account.")
+            return redirect('manage_admins')
+        
+        user.is_active = False
+        user.save()
+        messages.success(request, f"Admin user {user.get_full_name() or user.username} has been deactivated.")
+    else:
+        messages.warning(request, f"Admin user {user.get_full_name() or user.username} is already deactivated.")
+    
+    return redirect('manage_admins')
 
 @admin_required
 def admin_teaching_records(request):
     """Admin view for all teaching records, with filtering."""
+    active_tab = request.GET.get('tab', 'sessions')
     lecturers = Lecturer.objects.filter(is_approved=True).select_related('user')
     selected_lecturer_id = request.GET.get('lecturer')
     
@@ -234,6 +343,9 @@ def admin_teaching_records(request):
     parsed_files = files_list.filter(sessions_count__gt=0).count()
     pending_files = total_files - parsed_files
 
+    # For searchable dropdown
+    lecturers_for_js = [{'id': lec.id, 'name': lec.user.get_full_name() or lec.user.username} for lec in lecturers]
+
     # Build filter params for pagination links
     filter_params = request.GET.copy()
     if 'page' in filter_params:
@@ -247,6 +359,7 @@ def admin_teaching_records(request):
         'sessions': sessions,
         'subjects': subjects,
         'lecturers': lecturers,
+        'lecturers_json': json.dumps(lecturers_for_js),
         'selected_lecturer': selected_lecturer,
         'selected_subject': selected_subject,
         'search_query': search_query,
@@ -268,6 +381,7 @@ def admin_teaching_records(request):
         },
         'settings': settings,
         'ordered_columns': ordered_columns,
+        'active_tab': active_tab,
     }
     
     return render(request, 'analytics/admin/teaching_records.html', context)
@@ -277,7 +391,8 @@ def admin_teaching_records(request):
 def admin_upload_files(request):
     """Admin view for uploading files on behalf of lecturers."""
     lecturer_id = request.POST.get('lecturer')
-    files = request.FILES.getlist('file')
+    files = request.FILES.getlist('files')
+    auto_parse = request.POST.get('auto_parse') == 'on'
 
     if not lecturer_id:
         messages.error(request, "Please select a lecturer.")
@@ -289,20 +404,86 @@ def admin_upload_files(request):
 
     try:
         lecturer = Lecturer.objects.get(id=lecturer_id)
-        for f in files:
-            TeachingFile.objects.create(lecturer=lecturer, file_name=f)
-        messages.success(request, f"Successfully uploaded {len(files)} file(s) for {lecturer.user.get_full_name()}.")
+        
+        uploaded_files = []
+        errors = []
+
+        for file in files:
+            if file.name.lower().endswith('.zip'):
+                try:
+                    zip_data = BytesIO(file.read())
+                    with zipfile.ZipFile(zip_data, 'r') as zip_ref:
+                        xlsb_found = False
+                        for zip_info in zip_ref.namelist():
+                            if zip_info.lower().endswith('.xlsb') and not zip_info.startswith('__MACOSX'):
+                                xlsb_found = True
+                                xlsb_data = zip_ref.read(zip_info)
+                                xlsb_name = zip_info.split('/')[-1]
+                                xlsb_file = ContentFile(xlsb_data, name=xlsb_name)
+                                teaching_file = TeachingFile.objects.create(lecturer=lecturer, file_name=xlsb_file)
+                                uploaded_files.append(teaching_file)
+                        if not xlsb_found:
+                            errors.append(f"No .xlsb files found in '{file.name}'.")
+                except zipfile.BadZipFile:
+                    errors.append(f"'{file.name}' is not a valid ZIP file.")
+                except Exception as e:
+                    errors.append(f"Error processing ZIP '{file.name}': {e}")
+            
+            elif file.name.lower().endswith('.xlsb'):
+                teaching_file = TeachingFile.objects.create(lecturer=lecturer, file_name=file)
+                uploaded_files.append(teaching_file)
+            else:
+                errors.append(f"'{file.name}' is not a valid XLSB or ZIP file and was skipped.")
+
+        if errors:
+            for error in errors:
+                messages.warning(request, error)
+
+        if not uploaded_files:
+            messages.error(request, "No valid files were uploaded.")
+            return redirect(f"{reverse('admin_teaching_records')}?tab=files&lecturer={lecturer_id}")
+
+        total_sessions_created = 0
+        if auto_parse:
+            for tf in uploaded_files:
+                try:
+                    created_count = parse_xlsb_and_create_sessions(tf)
+                    total_sessions_created += created_count
+                except Exception as e:
+                    messages.error(request, f"Error parsing file '{tf.file_name.name}': {e}")
+        
+        if uploaded_files:
+            if auto_parse:
+                messages.success(request, f"Successfully uploaded and parsed {len(uploaded_files)} file(s), creating {total_sessions_created} sessions for {lecturer.user.get_full_name()}.")
+            else:
+                messages.success(request, f"Successfully uploaded {len(uploaded_files)} file(s) for {lecturer.user.get_full_name()}. Parsing was not requested.")
+
     except Lecturer.DoesNotExist:
         messages.error(request, "The selected lecturer does not exist.")
+        return redirect('admin_teaching_records')
     
-    return redirect('admin_teaching_records')
+    redirect_url = f"{reverse('admin_teaching_records')}?tab=files&lecturer={lecturer_id}"
+    return redirect(redirect_url)
 
 @admin_required
 def admin_workload_prediction(request):
     """Admin view for all workload predictions."""
     predictions = WorkloadPrediction.objects.select_related('lecturer__user', 'subject').order_by('-created_at')
+
+    total_predictions = predictions.count()
+    workload_alerts = predictions.exclude(risk_level='Normal')
+    workload_alerts_count = workload_alerts.count()
+    overload_count = workload_alerts.filter(risk_level='Overload').count()
+    underload_count = workload_alerts.filter(risk_level='Underload').count()
+    normal_count = total_predictions - workload_alerts_count
+    
     context = {
         'predictions': predictions,
+        'total_predictions': total_predictions,
+        'workload_alerts_count': workload_alerts_count,
+        'overload_count': overload_count,
+        'underload_count': underload_count,
+        'normal_count': normal_count,
     }
     return render(request, 'analytics/admin/workload_prediction.html', context)
 

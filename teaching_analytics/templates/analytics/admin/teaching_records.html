@@ -702,9 +702,10 @@
   </div>
 </div>
 
+
 <!-- Upload Modal -->
 <div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">📁 Upload Teaching Files</h2>
       <button onclick="closeUploadModal()" 
@@ -718,93 +719,55 @@
 
     <form method="post" enctype="multipart/form-data" action="{% url 'admin_upload_files' %}" id="uploadForm">
       {% csrf_token %}
-       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lecturer</label>
-        <select 
-          name="lecturer"
-          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none
-                 transition-all duration-300 focus:scale-105"
-        >
-          <option value="">Select Lecturer</option>
-          {% for lecturer in lecturers %}
-          <option value="{{ lecturer.id }}">
-            {{ lecturer.user.get_full_name|default:lecturer.user.username }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Select XLSB Files or ZIP Archive <span class="text-red-500 dark:text-red-400">*</span>
-        </label>
-        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center 
-                    hover:border-teal-500 dark:hover:border-teal-400 transition-all duration-300 cursor-pointer 
-                    bg-gray-50 dark:bg-gray-700/50 hover:bg-teal-50 dark:hover:bg-teal-900/10"
-             onclick="document.getElementById('bulkFileInput').click()"
-             id="dropZone">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lecturer</label>
+          <select 
+            name="lecturer" 
+            required 
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                   focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none
+                   transition-all duration-300"
+          >
+            <option value="">Select Lecturer</option>
+            {% for lecturer in lecturers %}
+            <option value="{{ lecturer.id }}">{{ lecturer.user.get_full_name|default:lecturer.user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select XLSB Files or a ZIP Archive
+          </label>
           <input 
             type="file" 
-            id="bulkFileInput" 
             name="files" 
             multiple 
+            required
             accept=".xlsb,.zip" 
-            class="hidden" 
-            onchange="handleFileSelection(event)"
+            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 dark:file:bg-teal-700 file:text-teal-700 dark:file:text-teal-100 hover:file:bg-teal-100 dark:hover:file:bg-teal-600"
           >
-          <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <p class="text-gray-600 dark:text-gray-300 mb-2">Click to browse or drag and drop</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Upload XLSB files individually or in a ZIP archive</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">✨ ZIP files will be automatically extracted</p>
+        </div>
+
+        <div>
+          <label class="flex items-center">
+            <input type="checkbox" name="auto_parse" checked class="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Auto-parse files after upload</span>
+          </label>
         </div>
       </div>
 
-      <div id="selectedFilesList" class="mb-6">
-        <div class="flex justify-between items-center mb-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selected Files:</label>
-          <button 
-            type="button" 
-            id="clearAllBtn"
-            onclick="clearAllFiles()"
-            class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium hidden 
-                   transition-all duration-200 hover:scale-105">
-            Clear All
-          </button>
-        </div>
-        <div id="fileListContainer" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600">
-          <div class="text-gray-500 dark:text-gray-400 text-center">No files selected</div>
-        </div>
-      </div>
-
-      <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 
-                  transition-all duration-300 hover:scale-105">
-        <label class="flex items-start cursor-pointer">
-          <input type="checkbox" name="auto_parse" checked class="mt-1 mr-3 w-5 h-5 text-teal-600 dark:text-teal-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded transition-all duration-200 hover:scale-110">
-          <div>
-            <span class="font-medium text-gray-900 dark:text-gray-100">⚡ Auto-parse files after upload</span>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Files will be processed immediately and teaching sessions will be created automatically.
-            </p>
-          </div>
-        </label>
-      </div>
-
-      <div class="flex gap-3 justify-end">
+      <div class="flex gap-3 justify-end mt-8">
         <button type="button" 
-                onclick="closeUploadModal()"
+                onclick="closeUploadModal()" 
                 class="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 
-                       rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-105">
+                       rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300">
           Cancel
         </button>
-        <button type="submit" 
-                id="uploadSubmitBtn"
-                class="px-6 py-2 bg-teal-600 dark:bg-teal-500 text-white rounded-lg 
-                       hover:bg-teal-700 dark:hover:bg-teal-600 transition-all duration-300 hover:scale-105 active:scale-95">
-          📤 Upload Files
+        <button type="submit" id="uploadSubmitBtn" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all duration-300">
+          Upload Files
         </button>
       </div>
     </form>

@@ -12,6 +12,7 @@ urlpatterns = [
     path('dashboard/', admin_views.dashboard, name='dashboard'),
     path('lecturers/', admin_views.lecturers, name='lecturers'),
     path('lecturers/approve/<int:lecturer_id>/', admin_views.approve_lecturer, name='approve_lecturer'),
+    path('lecturers/deactivate/<int:lecturer_id>/', admin_views.deactivate_lecturer, name='deactivate_lecturer'),
     path('lecturers/edit/<int:lecturer_id>/', admin_views.edit_lecturer, name='edit_lecturer'),
     path('lecturers/create/', admin_views.create_lecturer, name='create_lecturer'),
     path('administrator/teaching-records/', admin_views.admin_teaching_records, name='admin_teaching_records'),
@@ -21,6 +22,8 @@ urlpatterns = [
     path('administrator/settings/', admin_views.admin_settings, name='admin_settings'),
     path('administrator/manage-admins/', admin_views.manage_admins, name='manage_admins'),
     path('administrator/create-admin/', admin_views.create_admin, name='create_admin'),
+    path('administrator/deactivate-admin/<int:user_id>/', admin_views.deactivate_admin, name='deactivate_admin'),
+    path('administrator/activate-admin/<int:user_id>/', admin_views.activate_admin, name='activate_admin'),
     
     # Lecturer URLs
     path('', lecturer_views.home, name='home'),

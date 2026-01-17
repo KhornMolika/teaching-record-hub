@@ -1,4 +1,6 @@
-{% extends "../base.html" %} {% block title %}Admin Dashboard{% endblock %}
+{% extends "../base.html" %} 
+{% load arithmetic_filters %}
+{% block title %}Admin Dashboard{% endblock %}
 {%block content %}
 <div class="flex min-h-screen bg-gray-50">
   <!-- Include Admin Sidebar -->
@@ -39,7 +41,7 @@
         </div>
         <div class="text-sm text-gray-500 mb-1">Active Lecturers</div>
         <div class="text-3xl font-bold text-gray-900 mb-2">{{ active_lecturers_count }}</div>
-        <div class="text-xs text-gray-500">{{ total_lecturers }} total</div>
+        <div class="text-xs text-gray-500">{{ total_lecturers_count }} total lecturers</div>
       </div>
 
       <!-- Total Teaching Hours -->
@@ -65,7 +67,7 @@
         </div>
         <div class="text-sm text-gray-500 mb-1">Total Teaching Hours</div>
         <div class="text-3xl font-bold text-gray-900 mb-2">{{ total_teaching_hours|floatformat:1 }}h</div>
-        <div class="text-xs text-gray-500">This semester</div>
+        <div class="text-xs text-gray-500">Across all records</div>
       </div>
 
       <!-- Total Sessions -->
@@ -91,7 +93,7 @@
         </div>
         <div class="text-sm text-gray-500 mb-1">Total Sessions</div>
         <div class="text-3xl font-bold text-gray-900 mb-2">{{ total_sessions_count }}</div>
-        <div class="text-xs text-gray-500">Recorded</div>
+        <div class="text-xs text-gray-500">Recorded sessions</div>
       </div>
 
       <!-- Workload Alerts -->
@@ -119,129 +121,91 @@
         <div class="text-3xl font-bold text-gray-900 mb-2">{{ workload_alerts_count }}</div>
         <div class="text-xs text-gray-500">{{ overload_count }} overloaded, {{ underload_count }} understaffed</div>
       </div>
+
+
     </div>
 
-    <div class="grid grid-cols-3 gap-6 mb-8">
-      <!-- Weekly Teaching Hours Chart -->
-      <div
-        class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-      >
-        <div class="mb-6">
-          <h2 class="text-lg font-bold text-gray-900">Weekly Teaching Hours</h2>
-          <p class="text-sm text-gray-500">Total hours across all lecturers</p>
-        </div>
-        <div class="relative h-64">
-          <svg
-            class="w-full h-full"
-            viewBox="0 0 600 200"
-            preserveAspectRatio="none"
-          >
-            <!-- Grid lines -->
-            <line
-              x1="0"
-              y1="0"
-              x2="600"
-              y2="0"
-              stroke="#e5e7eb"
-              stroke-width="1"
-            />
-            <line
-              x1="0"
-              y1="50"
-              x2="600"
-              y2="50"
-              stroke="#e5e7eb"
-              stroke-width="1"
-            />
-            <line
-              x1="0"
-              y1="100"
-              x2="600"
-              y2="100"
-              stroke="#e5e7eb"
-              stroke-width="1"
-            />
-            <line
-              x1="0"
-              y1="150"
-              x2="600"
-              y2="150"
-              stroke="#e5e7eb"
-              stroke-width="1"
-            />
-            <line
-              x1="0"
-              y1="200"
-              x2="600"
-              y2="200"
-              stroke="#e5e7eb"
-              stroke-width="1"
-            />
-
-            <!-- Area fill -->
-            <path
-              d="M 0 140 L 60 130 L 120 125 L 180 115 L 240 105 L 300 85 L 360 90 L 420 65 L 480 50 L 540 60 L 600 180 L 600 200 L 0 200 Z"
-              fill="url(#gradient)"
-              opacity="0.3"
-            />
-
-            <!-- Line -->
-            <path
-              d="M 0 140 L 60 130 L 120 125 L 180 115 L 240 105 L 300 85 L 360 90 L 420 65 L 480 50 L 540 60 L 600 180"
-              fill="none"
-              stroke="#6366f1"
-              stroke-width="2"
-            />
-
-            <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop
-                  offset="0%"
-                  style="stop-color: #6366f1; stop-opacity: 1"
-                />
-                <stop
-                  offset="100%"
-                  style="stop-color: #6366f1; stop-opacity: 0"
-                />
-              </linearGradient>
-            </defs>
-          </svg>
-
-          <!-- X-axis labels -->
-          <div class="flex justify-between mt-2 text-xs text-gray-500">
-            <span>Week 1</span>
-            <span>Week 2</span>
-            <span>Week 3</span>
-            <span>Week 4</span>
-            <span>Week 5</span>
-            <span>Week 6</span>
-            <span>Week 7</span>
-            <span>Week 8</span>
-            <span>Week 9</span>
-            <span>Week 10</span>
-          </div>
-        </div>
-      </div>
-
+    <div class="grid grid-cols-2 gap-6 mb-8">
       <!-- Hours by Department -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <style>
+          @keyframes grow-bar {
+            from { width: 0; }
+          }
+          .bar-animation {
+            animation: grow-bar 0.5s ease-out forwards;
+          }
+        </style>
         <div class="mb-6">
           <h2 class="text-lg font-bold text-gray-900">Hours by Department</h2>
           <p class="text-sm text-gray-500">Teaching load distribution</p>
         </div>
         <div class="space-y-4">
           {% for item in department_hours %}
+          {% cycle 'bg-indigo-500' 'bg-blue-500' 'bg-green-500' 'bg-purple-500' 'bg-pink-500' as bar_color silent %}
           <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-700">{{ item.department }}</span>
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-sm font-medium text-gray-700">{{ item.department }}</span>
+              <span class="text-sm font-medium text-gray-500">{{ item.hours|floatformat:1 }}h</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-8">
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                class="bg-indigo-600 h-8 rounded-full flex items-center justify-end pr-3"
-                style="width: 100%"
-              >
-                <span class="text-xs font-semibold text-white">{{ item.hours|floatformat:1 }}h</span>
-              </div>
+                class="{{ bar_color }} h-2.5 rounded-full bar-animation"
+                style="width: {% widthratio item.hours total_teaching_hours 100 %}%"
+              ></div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">No teaching hours recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Recent File Uploads -->
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-gray-900">Recent File Uploads</h2>
+          <p class="text-sm text-gray-500">Latest files processed by the system</p>
+        </div>
+        <div class="space-y-4">
+          {% for item in recent_files %}
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold text-gray-800">{{ item.file.file_name.name|truncatechars:30 }}</p>
+              <p class="text-xs text-gray-500">by {{ item.file.lecturer.user.get_full_name }} &middot; {{ item.file.upload_date|timesince }} ago</p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-gray-800">{{ item.duration }}</p>
+              {% if item.file.is_parsed %}
+                <span class="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">Parsed</span>
+              {% else %}
+                <span class="text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">No files have been uploaded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Lecturers -->
+    <div class="grid grid-cols-1 gap-6 mb-8">
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-gray-900">Top Lecturers by Teaching Hours</h2>
+          <p class="text-sm text-gray-500">Lecturers with the most recorded teaching hours</p>
+        </div>
+        <div class="space-y-4">
+          {% for item in top_lecturers %}
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold text-gray-800">{{ item.lecturer.user.get_full_name }}</p>
+              <p class="text-xs text-gray-500">{{ item.lecturer.department }}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-gray-800">{{ item.duration }}</p>
             </div>
           </div>
           {% empty %}
@@ -251,94 +215,12 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-6">
-      <!-- Workload Status -->
-      <div
-        class="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-      >
-        <div class="mb-6">
-          <h2 class="text-lg font-bold text-gray-900">Workload Status</h2>
-          <p class="text-sm text-gray-500">Predicted semester outcomes</p>
-        </div>
-        <div class="space-y-4">
-          {% for prediction in workload_status %}
-          <div
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold"
-              >
-                {{ prediction.lecturer.user.first_name|first }}{{ prediction.lecturer.user.last_name|first }}
-              </div>
-              <div>
-                <div class="font-semibold text-gray-900">{{ prediction.lecturer.user.get_full_name }}</div>
-                <div class="text-sm text-gray-500">
-                  {{ prediction.current_minutes|floatformat:1 }}h completed • {{ prediction.predicted_total_minutes|floatformat:1 }}h predicted
-                </div>
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full"
-              >{{ prediction.risk_level }}</span
-            >
-          </div>
-          {% empty %}
-          <p class="text-sm text-gray-500">No workload predictions available.</p>
-          {% endfor %}
-        </div>
-      </div>
 
-      <!-- Recent Sessions -->
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-center mb-6">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">Recent Sessions</h2>
-            <p class="text-sm text-gray-500">Latest teaching activities</p>
-          </div>
-          <a
-            href="#"
-            class="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-            >View all</a
-          >
-        </div>
-        <div class="space-y-4">
-          {% for session in recent_sessions %}
-          <div class="flex gap-3">
-            <div
-              class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-gray-900 text-sm truncate">
-                {{ session.subject.subject_name }}
-              </div>
-              <div class="text-xs text-gray-500">{{ session.lecturer.user.get_full_name }}</div>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">{{ session.date|date:"M d" }}</span>
-                <span class="text-xs text-gray-500">{{ session.duration }}</span>
-              </div>
-            </div>
-          </div>
-          {% empty %}
-          <p class="text-sm text-gray-500">No recent sessions found.</p>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
+
+
+
+
+
   </div>
 </div>
 {% endblock %}
