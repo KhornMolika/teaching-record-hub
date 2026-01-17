@@ -1,49 +1,49 @@
 {% extends "../base.html" %} {% block title %}Edit Lecturer{% endblock %}
 {% block content %}
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
   <!-- Include Admin Sidebar -->
   {% include "./sidebarAdmin.html" %}
 
   <!-- Main Content -->
-  <div class="flex-1 ml-64 py-8 px-8">
+  <div class="flex-1 ml-64 py-8 px-8 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-8" data-aos="fade-down">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Edit Lecturer</h1>
-        <p class="text-gray-500 mt-1">Update details for {{ lecturer.user.get_full_name }}.</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Lecturer</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">Update details for {{ lecturer.user.get_full_name }}.</p>
       </div>
     </div>
 
     <!-- Edit Form -->
-    <div class="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-100 dark:border-gray-700" data-aos="fade-up">
       <form method="post">
         {% csrf_token %}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- First Name -->
           <div>
-            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            <input type="text" name="first_name" id="first_name" value="{{ lecturer.user.first_name }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+            <input type="text" name="first_name" id="first_name" value="{{ lecturer.user.first_name }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100">
           </div>
           <!-- Last Name -->
           <div>
-            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            <input type="text" name="last_name" id="last_name" value="{{ lecturer.user.last_name }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+            <input type="text" name="last_name" id="last_name" value="{{ lecturer.user.last_name }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100">
           </div>
           <!-- Email -->
           <div class="md:col-span-2">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input type="email" name="email" id="email" value="{{ lecturer.user.email }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+            <input type="email" name="email" id="email" value="{{ lecturer.user.email }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100">
           </div>
           <!-- Department -->
           <div class="md:col-span-2">
-            <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-            <input type="text" name="department" id="department" value="{{ lecturer.department }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+            <input type="text" name="department" id="department" value="{{ lecturer.department }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100">
           </div>
         </div>
 
         <!-- Buttons -->
         <div class="mt-8 flex justify-end gap-4">
-          <a href="{% url 'lecturers' %}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <a href="{% url 'lecturers' %}" class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Cancel
           </a>
           <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">

@@ -12,8 +12,8 @@
     <!-- Theme Configuration - RUNS IN BROWSER -->
     <script>
       (function () {
-        const theme = '{{ settings.theme|default:"light" }}'; // ← Gets value from Python
-
+        const theme = "{% if user.is_staff %}{{ admin_settings.default_theme|default:'light' }}{% else %}{{ settings.theme|default:'light' }}{% endif %}";
+        
         if (theme === "dark") {
           document.documentElement.classList.add("dark");
         } else if (theme === "auto") {
