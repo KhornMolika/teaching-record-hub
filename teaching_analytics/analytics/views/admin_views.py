@@ -130,8 +130,22 @@ def lecturers(request):
         
     display_lecturers = display_lecturers.order_by('is_approved', 'created_at')
 
+    # Get admin settings for pagination
+    try:
+        admin_settings = AdminSettings.objects.get(user=request.user)
+        records_per_page = admin_settings.default_records_per_page
+    except AdminSettings.DoesNotExist:
+        records_per_page = 15  # Fallback (as before)
+
+    # Pagination
+    paginator = Paginator(display_lecturers, records_per_page)
+    page_number = request.GET.get('page', 1)
+    if page_number == '':
+        page_number = 1
+    lecturers_page = paginator.get_page(page_number)
+
     context = {
-        'lecturers': display_lecturers,
+        'lecturers': lecturers_page,
         'pending_count': pending_count,
         'approved_count': approved_count,
         'all_count': all_count,
@@ -326,8 +340,10 @@ def admin_teaching_records(request):
     avg_per_session = round(total_hours / total_sessions, 2) if total_sessions else 0
     
     # Pagination
-    paginator = Paginator(sessions_list, view_settings.records_per_page)
+    paginator = Paginator(sessions_list, system_settings.default_records_per_page)
     page_number = request.GET.get('page', 1)
+    if page_number == '':
+        page_number = 1
     sessions = paginator.get_page(page_number)
     
     # Get subjects for filter dropdown
@@ -608,10 +624,24 @@ def create_lecturer(request):
 @superadmin_required
 def manage_admins(request):
     """Superadmin view for managing administrators."""
-    admins = User.objects.filter(is_staff=True).order_by('-is_superuser', '-date_joined')
+    admins_query = User.objects.filter(is_staff=True).order_by('-is_superuser', '-date_joined')
+    
+    # Get admin settings for pagination
+    try:
+        admin_settings = AdminSettings.objects.get(user=request.user)
+        records_per_page = admin_settings.default_records_per_page
+    except AdminSettings.DoesNotExist:
+        records_per_page = 15  # Fallback (as before)
+
+    # Pagination
+    paginator = Paginator(admins_query, records_per_page)
+    page_number = request.GET.get('page', 1)
+    if page_number == '':
+        page_number = 1
+    admins_page = paginator.get_page(page_number)
     
     context = {
-        'admins': admins,
+        'admins': admins_page,
     }
     
     return render(request, 'analytics/admin/manage_admins.html', context)
