@@ -44,7 +44,6 @@ class Lecturer(models.Model):
         return "Pending Approval"
 
 
-
 class LecturerSettings(models.Model):
     lecturer = models.OneToOneField(
         Lecturer, on_delete=models.CASCADE, related_name='settings'
@@ -79,6 +78,11 @@ class LecturerSettings(models.Model):
         return f"Settings for {self.lecturer.user.username}"
 
 
+# Helper function for AdminSettings default
+def get_default_admin_columns():
+    return ['lecturer', 'date', 'subject', 'duration']
+
+
 class AdminSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_settings')
     
@@ -96,7 +100,7 @@ class AdminSettings(models.Model):
     allowed_file_types = models.CharField(max_length=100, default='.xlsb,.zip', help_text="Comma-separated list of allowed file extensions.")
     max_file_size_mb = models.PositiveSmallIntegerField(default=15, help_text="Maximum file size in MB.")
     semester_workload_target = models.PositiveSmallIntegerField(default=180, help_text="Target workload in hours for the entire semester.")
-    default_columns = models.JSONField(default=lambda: ['lecturer', 'date', 'subject', 'duration'])
+    default_columns = models.JSONField(default=get_default_admin_columns)
 
     def __str__(self):
         return f"Admin Settings for {self.user.username}"

@@ -477,7 +477,7 @@
                         <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ file.file_name.name|truncatechars:40 }}</span>
+                        <a href="{{ file.file_name.url }}" class="text-sm font-medium text-gray-900 dark:text-gray-100" target="_blank">{{ file.file_name.name|truncatechars:40 }}</a>
                       </div>
                     </td>
                     <td class="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
@@ -731,7 +731,6 @@
             multiple 
             accept=".xlsb,.zip" 
             class="hidden" 
-            onchange="handleFileSelection(event)"
           >
           <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -837,7 +836,7 @@
 </script>
 
 <!-- Load JS with cache busting -->
-<script src="{% static 'js/teaching_records.js' %}?v=3" defer></script>
+<script src="{% static 'js/teaching_records.js' %}?v=4" defer></script>
 
 <script>
 // Store Django data

@@ -468,6 +468,61 @@ async function removeEmptyFiles() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const bulkFileInput = document.getElementById('bulkFileInput');
+  if (bulkFileInput) {
+    bulkFileInput.addEventListener('change', handleFileSelection);
+  }
+
+  function handleFileSelection(event) {
+    const fileInput = event.target;
+    const fileListContainer = document.getElementById('fileListContainer');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    
+    const files = fileInput.files;
+
+    if (!files || files.length === 0) {
+      fileListContainer.innerHTML = '<div class="text-gray-500 dark:text-gray-400 text-center">No files selected</div>';
+      clearAllBtn.classList.add('hidden');
+      return;
+    }
+
+    fileListContainer.innerHTML = '';
+    clearAllBtn.classList.remove('hidden');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileSize = (file.size / 1024 / 1024).toFixed(2); // in MB
+      
+      const fileElement = document.createElement('div');
+      fileElement.className = 'flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded-lg mb-2';
+      
+      fileElement.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${file.name}</span>
+        </div>
+        <span class="text-sm text-gray-500 dark:text-gray-400">${fileSize} MB</span>
+      `;
+      
+      fileListContainer.appendChild(fileElement);
+    }
+  }
+
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  if(clearAllBtn) {
+    clearAllBtn.addEventListener('click', clearAllFiles);
+  }
+
+  function clearAllFiles() {
+    const fileInput = document.getElementById('bulkFileInput');
+    const fileListContainer = document.getElementById('fileListContainer');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    fileInput.value = '';
+    fileListContainer.innerHTML = '<div class="text-gray-500 dark:text-gray-400 text-center">No files selected</div>';
+    clearAllBtn.classList.add('hidden');
+  }
+
   // Use the active tab from backend (passed via DJANGO_DATA)
   // This ensures the tab state is preserved across all operations
   if (DJANGO_DATA.activeTab === "files") {
@@ -500,4 +555,3 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   console.log("=== END PAGE LOAD DEBUG ===");
 });
-
